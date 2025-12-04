@@ -1,6 +1,7 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/cart_items.dart';
 import 'package:bike_shop/providers/cart_provider.dart';
+import 'package:bike_shop/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -135,7 +136,7 @@ class _CartScreenState extends State<CartScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: .05),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -160,7 +161,10 @@ class _CartScreenState extends State<CartScreen> {
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+            ),
             icon: const Icon(Icons.shopping_bag_outlined),
             label: const Text('Start Shopping'),
           ),
