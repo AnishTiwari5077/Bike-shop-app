@@ -84,7 +84,7 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                               end: Alignment.bottomRight,
                               colors: [
                                 category['color'] as Color,
-                                (category['color'] as Color).withOpacity(0.7),
+                                (category['color'] as Color).withValues(alpha: .7),
                               ],
                             )
                           : null,
@@ -92,14 +92,14 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
-                            ? (category['color'] as Color).withOpacity(0.5)
-                            : Colors.white.withOpacity(0.1),
+                            ? (category['color'] as Color).withValues(alpha: .5)
+                            : Colors.white.withValues(alpha: .1),
                         width: isSelected ? 2 : 1,
                       ),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: (category['color'] as Color).withOpacity(
+                                color: (category['color'] as Color).withValues(alpha: 
                                   0.3,
                                 ),
                                 blurRadius: 12,
