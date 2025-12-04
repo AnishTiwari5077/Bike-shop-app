@@ -1,6 +1,5 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/cart_items.dart';
-
 import 'package:bike_shop/models/order_model.dart';
 import 'package:flutter/material.dart';
 
@@ -19,30 +18,7 @@ class OrderDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Order Status
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Order Status',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStatusTimeline(),
-                ],
-              ),
-            ),
-
+            _buildStatusSection(),
             const SizedBox(height: 24),
             const Text(
               'Order Items',
@@ -53,45 +29,9 @@ class OrderDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-
-            // Order Items
             ...order.items.map((item) => _buildOrderItem(item)),
-
             const SizedBox(height: 24),
-            // Order Summary
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Order Summary',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSummaryRow(
-                    'Subtotal',
-                    '\$${order.totalAmount.toStringAsFixed(2)}',
-                  ),
-                  _buildSummaryRow('Shipping', 'Free'),
-                  _buildSummaryRow('Tax', '\$0.00'),
-                  const Divider(color: Colors.white24, height: 24),
-                  _buildSummaryRow(
-                    'Total',
-                    '\$${order.totalAmount.toStringAsFixed(2)}',
-                    isTotal: true,
-                  ),
-                ],
-              ),
-            ),
+            _buildSummarySection(),
             const SizedBox(height: 100),
           ],
         ),
@@ -99,75 +39,93 @@ class OrderDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusTimeline() {
+  Widget _buildStatusSection() {
     final statuses = ['Pending', 'Processing', 'Shipped', 'Delivered'];
     final currentIndex = statuses.indexWhere(
       (s) => s.toLowerCase() == order.status.toLowerCase(),
     );
 
-    return Column(
-      children: List.generate(statuses.length, (index) {
-        final isCompleted = index <= currentIndex;
-        final isLast = index == statuses.length - 1;
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isCompleted ? AppTheme.accentBlue : Colors.grey[700],
-                  ),
-                  child: Icon(
-                    isCompleted ? Icons.check : Icons.circle,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-                if (!isLast)
-                  Container(
-                    width: 2,
-                    height: 40,
-                    color: isCompleted ? AppTheme.accentBlue : Colors.grey[700],
-                  ),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Order Status',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      statuses[index],
-                      style: TextStyle(
-                        color: isCompleted ? Colors.white : Colors.white54,
-                        fontSize: 16,
-                        fontWeight: isCompleted
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                      ),
-                    ),
-                    if (isCompleted)
-                      Text(
-                        _formatDate(order.orderDate.add(Duration(days: index))),
-                        style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 12,
+          ),
+          const SizedBox(height: 16),
+          Column(
+            children: List.generate(statuses.length, (index) {
+              final isCompleted = index <= currentIndex;
+              final isLast = index == statuses.length - 1;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isCompleted
+                              ? AppTheme.accentBlue
+                              : Colors.grey[700],
+                        ),
+                        child: Icon(
+                          isCompleted ? Icons.check : Icons.circle,
+                          color: Colors.white,
+                          size: 16,
                         ),
                       ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      }),
+                      if (!isLast)
+                        Container(
+                          width: 2,
+                          height: 40,
+                          color: isCompleted
+                              ? AppTheme.accentBlue
+                              : Colors.grey[700],
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            statuses[index],
+                            style: TextStyle(
+                              color: isCompleted
+                                  ? Colors.white
+                                  : Colors.white54,
+                              fontSize: 16,
+                              fontWeight: isCompleted
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+        ],
+      ),
     );
   }
 
@@ -228,6 +186,42 @@ class OrderDetailScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSummarySection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Order Summary',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildSummaryRow(
+            'Subtotal',
+            '\$${order.totalAmount.toStringAsFixed(2)}',
+          ),
+          _buildSummaryRow('Shipping', 'Free'),
+          _buildSummaryRow('Tax', '\$0.00'),
+          const Divider(color: Colors.white24, height: 24),
+          _buildSummaryRow(
+            'Total',
+            '\$${order.totalAmount.toStringAsFixed(2)}',
+            isTotal: true,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -253,9 +247,5 @@ class OrderDetailScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 }

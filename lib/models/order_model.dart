@@ -59,7 +59,7 @@ class Order {
       items: items,
       totalAmount: map['totalAmount'],
       orderDate: DateTime.parse(map['orderDate']),
-      status: map['status'],
+      status: map['status'].toString().toLowerCase().trim(),
       trackingNumber: map['trackingNumber'],
     );
   }

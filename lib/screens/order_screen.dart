@@ -31,7 +31,7 @@ class _OrdersScreenState extends State<OrdersScreen>
 
   @override
   Widget build(BuildContext context) {
-    final orders = context.watch<OrdersProvider>();
+    final ordersProvider = context.watch<OrdersProvider>();
 
     return Scaffold(
       backgroundColor: AppTheme.primaryBackground,
@@ -43,16 +43,16 @@ class _OrdersScreenState extends State<OrdersScreen>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white54,
           tabs: [
-            Tab(text: 'Active (${orders.activeOrders.length})'),
-            Tab(text: 'Completed (${orders.completedOrders.length})'),
+            Tab(text: 'Active (${ordersProvider.activeOrders.length})'),
+            Tab(text: 'Completed (${ordersProvider.completedOrders.length})'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildOrdersList(orders.activeOrders, isActive: true),
-          _buildOrdersList(orders.completedOrders, isActive: false),
+          _buildOrdersList(ordersProvider.activeOrders, isActive: true),
+          _buildOrdersList(ordersProvider.completedOrders, isActive: false),
         ],
       ),
     );
@@ -132,7 +132,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    _formatDate(order.orderDate),
+                    '${order.orderDate.day}/${order.orderDate.month}/${order.orderDate.year}',
                     style: const TextStyle(color: Colors.white54, fontSize: 12),
                   ),
                   const Spacer(),
@@ -151,26 +151,6 @@ class _OrdersScreenState extends State<OrdersScreen>
                 '${order.items.length} item${order.items.length > 1 ? 's' : ''}',
                 style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
-              if (order.trackingNumber != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.local_shipping,
-                      size: 14,
-                      color: Colors.white54,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Tracking: ${order.trackingNumber}',
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),
@@ -182,7 +162,7 @@ class _OrdersScreenState extends State<OrdersScreen>
     Color color;
     String label;
 
-    switch (status.toLowerCase()) {
+    switch (status.toLowerCase().trim()) {
       case 'pending':
         color = Colors.orange;
         label = 'Pending';
@@ -224,9 +204,5 @@ class _OrdersScreenState extends State<OrdersScreen>
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 }

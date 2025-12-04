@@ -6,14 +6,16 @@ class OrdersProvider with ChangeNotifier {
 
   List<Order> get orders => [..._orders];
 
-  List<Order> get activeOrders => _orders
-      .where(
-        (order) => order.status != 'delivered' && order.status != 'cancelled',
-      )
-      .toList();
+  // Active orders: not delivered or cancelled
+  List<Order> get activeOrders => _orders.where((order) {
+    final s = order.status.toLowerCase().trim();
+    return s != 'delivered' && s != 'cancelled';
+  }).toList();
 
-  List<Order> get completedOrders =>
-      _orders.where((order) => order.status == 'delivered').toList();
+  // Completed orders: delivered
+  List<Order> get completedOrders => _orders
+      .where((order) => order.status.toLowerCase().trim() == 'delivered')
+      .toList();
 
   void addOrder(Order order) {
     _orders.insert(0, order);
@@ -29,16 +31,15 @@ class OrdersProvider with ChangeNotifier {
   }
 
   void updateOrderStatus(String orderId, String newStatus) {
-    final orderIndex = _orders.indexWhere((order) => order.id == orderId);
-    if (orderIndex != -1) {
-      // Create new order with updated status
-      final oldOrder = _orders[orderIndex];
-      _orders[orderIndex] = Order(
+    final index = _orders.indexWhere((order) => order.id == orderId);
+    if (index != -1) {
+      final oldOrder = _orders[index];
+      _orders[index] = Order(
         id: oldOrder.id,
         items: oldOrder.items,
         totalAmount: oldOrder.totalAmount,
         orderDate: oldOrder.orderDate,
-        status: newStatus,
+        status: newStatus.toLowerCase().trim(),
         trackingNumber: oldOrder.trackingNumber,
       );
       notifyListeners();

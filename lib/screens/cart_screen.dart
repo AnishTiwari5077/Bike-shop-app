@@ -1,7 +1,11 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/cart_items.dart';
+import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/providers/cart_provider.dart';
+import 'package:bike_shop/providers/order_provider.dart';
 import 'package:bike_shop/screens/home_screen.dart';
+import 'package:bike_shop/screens/order_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,11 +20,33 @@ class _CartScreenState extends State<CartScreen> {
   bool _isProcessingCheckout = false;
 
   Future<void> _processCheckout(BuildContext context) async {
+    final cartProvider = context.read<CartProvider>();
+    final ordersProvider = context.read<OrdersProvider>();
+
+    if (cartProvider.isEmpty) return;
+
     setState(() => _isProcessingCheckout = true);
     await Future.delayed(const Duration(seconds: 2));
 
+    // Create a new order from cart items
+    final newOrder = Order(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      items: List.from(cartProvider.cartItems),
+      totalAmount: cartProvider.getCartSummary()['total'],
+      orderDate: DateTime.now(),
+      status: 'pending',
+    );
+
+    // Add to OrdersProvider
+    ordersProvider.addOrder(newOrder);
+
+    // Clear the cart
+    cartProvider.clearCart();
+
     if (mounted) {
       setState(() => _isProcessingCheckout = false);
+
+      // Show confirmation dialog
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -42,10 +68,14 @@ class _CartScreenState extends State<CartScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
-                context.read<CartProvider>().clearCart();
+                Navigator.pop(context); // Close dialog
+                // Navigate to OrdersScreen
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OrdersScreen()),
+                );
               },
-              child: const Text('OK'),
+              child: const Text('View Orders'),
             ),
           ],
         ),
@@ -136,7 +166,7 @@ class _CartScreenState extends State<CartScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .05),
+              color: Colors.white.withOpacity(0.05),
               shape: BoxShape.circle,
             ),
             child: const Icon(
