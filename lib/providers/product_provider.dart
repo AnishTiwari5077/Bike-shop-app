@@ -82,7 +82,14 @@ class ProductsProvider with ChangeNotifier {
         subtitle: 'Road Helmet',
         price: 120.00,
         imageUrl: 'assets/images/bike.png',
-        images: ['assets/images/bike.png', 'assets/images/bike.png'],
+        images: [
+          'assets/images/bike.png',
+          'assets/images/bike.png',
+          'assets/images/bike.png',
+          'assets/images/bike.png',
+          'assets/images/bike.png',
+          'assets/images/bike.png',
+        ],
         description:
             'A durable road helmet with advanced airflow and impact protection for safety.',
         rating: 4.5,
@@ -110,7 +117,7 @@ class ProductsProvider with ChangeNotifier {
         description:
             'Perfect for commuting and fitness rides with lightweight aluminum frame.',
         rating: 4.6,
-        category: 'bike',
+        category: 'mountain',
         maxStock: 15,
       ),
       Product(
@@ -122,7 +129,7 @@ class ProductsProvider with ChangeNotifier {
         description:
             'Powerful electric bike with 50-mile range and pedal assist technology.',
         rating: 4.7,
-        category: 'electric',
+        category: 'accessories',
         maxStock: 5,
       ),
       Product(
