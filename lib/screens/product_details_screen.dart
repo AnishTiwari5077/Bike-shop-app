@@ -77,7 +77,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             decoration: BoxDecoration(
                               color: _currentImageIndex == index
                                   ? Colors.white
-                                  : Colors.white.withOpacity(0.4),
+                                  : Colors.white.withValues(alpha: .4),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -339,7 +339,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         color: AppTheme.secondaryBackground,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: .2),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),

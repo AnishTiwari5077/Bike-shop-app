@@ -50,7 +50,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: .2),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -84,7 +84,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
+                              color: Colors.black.withValues(alpha: .5),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(

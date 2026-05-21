@@ -6,13 +6,11 @@ class OrdersProvider with ChangeNotifier {
 
   List<Order> get orders => [..._orders];
 
-  // Active orders: not delivered or cancelled
   List<Order> get activeOrders => _orders.where((order) {
     final s = order.status.toLowerCase().trim();
     return s != 'delivered' && s != 'cancelled';
   }).toList();
 
-  // Completed orders: delivered
   List<Order> get completedOrders => _orders
       .where((order) => order.status.toLowerCase().trim() == 'delivered')
       .toList();

@@ -80,7 +80,7 @@ class _HomeContentState extends State<HomeContent> {
           Text(
             'Welcome Back! 👋',
             style: TextStyle(
-              color: AppTheme.textPrimary.withOpacity(0.6),
+              color: AppTheme.textPrimary.withValues(alpha: .6),
               fontSize: 16,
             ),
           ),

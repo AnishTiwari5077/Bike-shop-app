@@ -146,7 +146,7 @@ class _SearchModalState extends State<SearchModal> {
             Icon(
               Icons.search_off,
               size: 64,
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: .3),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -157,7 +157,7 @@ class _SearchModalState extends State<SearchModal> {
             Text(
               'Try different keywords',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: .5),
                 fontSize: 14,
               ),
             ),
@@ -301,7 +301,6 @@ class _SearchModalState extends State<SearchModal> {
   }
 }
 
-// Helper function to show search modal
 void showSearchModal(BuildContext context) {
   showModalBottomSheet(
     context: context,

@@ -30,7 +30,7 @@ class BikePromo extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: .3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -70,7 +70,7 @@ class BikePromo extends StatelessWidget {
                           'On select bikes',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: .6),
                           ),
                         ),
                       ],

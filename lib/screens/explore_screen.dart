@@ -62,7 +62,6 @@ class _ExploreScreenState extends State<ExploreScreen>
   }
 }
 
-// Categories Tab
 class CategoriesTab extends StatelessWidget {
   const CategoriesTab({super.key});
 
@@ -127,7 +126,7 @@ class CategoriesTab extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     category['color'] as Color,
-                    (category['color'] as Color).withOpacity(0.6),
+                    (category['color'] as Color).withValues(alpha: .6),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -212,7 +211,7 @@ class DealsTab extends StatelessWidget {
                     Text(
                       'Up to 60% off',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: .9),
                         fontSize: 14,
                       ),
                     ),
@@ -252,7 +251,6 @@ class DealsTab extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Deals Grid
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -353,7 +351,7 @@ class DealsTab extends StatelessWidget {
                 ),
               ],
             ),
-            // Discount badge
+
             Positioned(
               top: 8,
               right: 8,
@@ -450,7 +448,7 @@ class NewArrivalsTab extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.accentBlue.withOpacity(0.2),
+                        color: AppTheme.accentBlue.withValues(alpha: .2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
