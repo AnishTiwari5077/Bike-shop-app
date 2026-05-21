@@ -1,3 +1,4 @@
+import 'package:bike_shop/providers/auth_provider.dart';
 import 'package:bike_shop/providers/cart_provider.dart';
 import 'package:bike_shop/providers/favorite_provider.dart';
 import 'package:bike_shop/providers/order_provider.dart';
@@ -18,19 +19,17 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Hardcoded for now — replace with real auth user data
-  static const String _userEmail = 'anish@email.com';
-  static const String _userName = 'Anish Sharma';
-
   @override
   void initState() {
     super.initState();
-    // Initialize Stripe customer once when profile loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PaymentProvider>().initialize(
-        email: _userEmail,
-        name: _userName,
-      );
+      final authProvider = context.read<AuthProvider>();
+      if (authProvider.isSignedIn) {
+        context.read<PaymentProvider>().initialize(
+          email: authProvider.email,
+          name: authProvider.displayName,
+        );
+      }
     });
   }
 
@@ -39,13 +38,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final cart = context.watch<CartProvider>();
     final favorites = context.watch<FavoritesProvider>();
     final orders = context.watch<OrdersProvider>();
+    final auth = context.watch<AuthProvider>();
 
     return Scaffold(
       backgroundColor: AppTheme.primaryBackground,
       body: CustomScrollView(
         slivers: [
+          // ── App Bar / Header ─────────────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: 220,
             pinned: true,
             backgroundColor: AppTheme.primaryBackground,
             flexibleSpace: FlexibleSpaceBar(
@@ -60,46 +61,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 40),
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        color: Colors.grey[700],
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.white,
-                      ),
-                    ),
+                    const SizedBox(height: 48),
+                    // Avatar
+                    _buildAvatar(auth),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Anish',
-                      style: TextStyle(
+                    // Name
+                    Text(
+                      auth.isSignedIn ? auth.displayName : 'Guest',
+                      style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Text(
-                      _userEmail,
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
+                    // Email
+                    if (auth.isSignedIn)
+                      Text(
+                        auth.email,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                          fontSize: 13,
+                        ),
+                      ),
+                    if (!auth.isSignedIn)
+                      const Text(
+                        'Sign in to access all features',
+                        style: TextStyle(color: Colors.white54, fontSize: 13),
+                      ),
                   ],
                 ),
               ),
             ),
           ),
+
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Stats Cards
+                  // ── Google Sign-In / Sign-Out ────────────────────────────
+                  if (!auth.isSignedIn)
+                    _buildGoogleSignInButton(auth)
+                  else
+                    _buildSignedInBadge(auth),
+
+                  const SizedBox(height: 24),
+
+                  // ── Stats ────────────────────────────────────────────────
                   Row(
                     children: [
                       Expanded(
@@ -228,27 +237,168 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
 
                   const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showLogoutDialog(context),
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Logout'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+
+                  // ── Logout ───────────────────────────────────────────────
+                  if (auth.isSignedIn)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showLogoutDialog(context, auth),
+                        icon: const Icon(Icons.logout),
+                        label: const Text('Logout'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ── Avatar ────────────────────────────────────────────────────────────────
+  Widget _buildAvatar(AuthProvider auth) {
+    if (auth.isSignedIn && auth.photoUrl.isNotEmpty) {
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 3),
+        ),
+        child: ClipOval(
+          child: Image.network(
+            auth.photoUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _defaultAvatar(),
+          ),
+        ),
+      );
+    }
+    return _defaultAvatar();
+  }
+
+  Widget _defaultAvatar() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3),
+        color: Colors.grey[700],
+      ),
+      child: const Icon(Icons.person, size: 40, color: Colors.white),
+    );
+  }
+
+  // ── Google Sign-In Button ─────────────────────────────────────────────────
+  Widget _buildGoogleSignInButton(AuthProvider auth) {
+    return GestureDetector(
+      onTap: () async {
+        final success = await auth.signInWithGoogle();
+        if (success && mounted) {
+          final paymentProvider = context.read<PaymentProvider>();
+          paymentProvider.initialize(email: auth.email, name: auth.displayName);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome, ${auth.displayName}!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (!success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sign-in cancelled or failed.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: auth.isLoading
+            ? const Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Google G logo (colored squares)
+                  _GoogleLogo(),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Continue with Google',
+                    style: TextStyle(
+                      color: Color(0xFF3C4043),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  // ── Signed-in badge ───────────────────────────────────────────────────────
+  Widget _buildSignedInBadge(AuthProvider auth) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.green.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.verified_user, color: Colors.green, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Signed in with Google',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  auth.email,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.check_circle, color: Colors.green, size: 20),
         ],
       ),
     );
@@ -330,7 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, AuthProvider auth) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -347,11 +497,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Logged out successfully')),
-              );
+              await auth.signOut();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Logged out successfully')),
+                );
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Logout'),
@@ -360,4 +513,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+}
+
+// ── Google Logo Widget ────────────────────────────────────────────────────────
+class _GoogleLogo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 24,
+      height: 24,
+      child: CustomPaint(painter: _GoogleLogoPainter()),
+    );
+  }
+}
+
+class _GoogleLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double s = size.width;
+
+    // Blue (top-left)
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, s / 2, s / 2),
+      Paint()..color = const Color(0xFF4285F4),
+    );
+    // Red (top-right)
+    canvas.drawRect(
+      Rect.fromLTWH(s / 2, 0, s / 2, s / 2),
+      Paint()..color = const Color(0xFFEA4335),
+    );
+    // Yellow (bottom-left)
+    canvas.drawRect(
+      Rect.fromLTWH(0, s / 2, s / 2, s / 2),
+      Paint()..color = const Color(0xFFFBBC05),
+    );
+    // Green (bottom-right)
+    canvas.drawRect(
+      Rect.fromLTWH(s / 2, s / 2, s / 2, s / 2),
+      Paint()..color = const Color(0xFF34A853),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
