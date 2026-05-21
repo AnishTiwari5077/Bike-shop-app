@@ -1,68 +1,140 @@
-import 'package:bike_shop/models/payment_model.dart';
+import 'package:bike_shop/service/stripe_service.dart';
+
 import 'package:flutter/material.dart';
 
+/// Manages the user's Stripe customer ID and their saved cards.
+/// Fetches real cards from Stripe via the backend.
 class PaymentProvider with ChangeNotifier {
-  final List<PaymentMethod> _methods = [
-    PaymentMethod(
-      id: '1',
-      type: PaymentType.card,
-      label: 'Visa ending in 4242',
-      cardNumber: '4242',
-      cardHolder: 'Anish Sharma',
-      expiryDate: '12/26',
-      cardBrand: 'Visa',
-      isDefault: true,
-    ),
-    PaymentMethod(
-      id: '2',
-      type: PaymentType.paypal,
-      label: 'PayPal — anish@email.com',
-      isDefault: false,
-    ),
-  ];
+  // ── State ────────────────────────────────────────────────────────────────
+  String? _stripeCustomerId; // Persisted in SharedPreferences in production
+  List<StripeCard> _cards = [];
+  String? _defaultCardId;
+  bool _isLoading = false;
+  String? _error;
 
-  List<PaymentMethod> get methods => [..._methods];
+  // ── Getters ──────────────────────────────────────────────────────────────
+  String? get stripeCustomerId => _stripeCustomerId;
+  List<StripeCard> get cards => [..._cards];
+  String? get defaultCardId => _defaultCardId;
+  StripeCard? get defaultCard => _cards.isEmpty
+      ? null
+      : _cards.firstWhere(
+          (c) => c.id == _defaultCardId,
+          orElse: () => _cards.first,
+        );
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  bool get hasCards => _cards.isNotEmpty;
 
-  PaymentMethod? get defaultMethod {
-    try {
-      return _methods.firstWhere((m) => m.isDefault);
-    } catch (_) {
-      return _methods.isEmpty ? null : _methods.first;
+  // ── Initialize (call once after user logs in) ────────────────────────────
+  /// Creates a Stripe customer for the user if one doesn't exist yet.
+  /// In production, store customerId in your database and restore it here.
+  Future<void> initialize({required String email, required String name}) async {
+    // In production: load customerId from SharedPreferences / your backend
+    // For now we create a fresh one each session (dev only)
+    if (_stripeCustomerId != null) {
+      await loadCards();
+      return;
     }
+
+    _setLoading(true);
+    final customerId = await StripeService.instance.createCustomer(
+      email: email,
+      name: name,
+    );
+
+    if (customerId != null) {
+      _stripeCustomerId = customerId;
+      await loadCards();
+    } else {
+      _error = 'Could not connect to payment service.';
+    }
+    _setLoading(false);
   }
 
-  void addMethod(PaymentMethod method) {
-    if (method.isDefault) {
-      _clearDefaults();
+  // ── Load cards from Stripe ───────────────────────────────────────────────
+  Future<void> loadCards() async {
+    if (_stripeCustomerId == null) return;
+    _setLoading(true);
+    _error = null;
+
+    _cards = await StripeService.instance.listCards(
+      customerId: _stripeCustomerId!,
+    );
+
+    if (_cards.isNotEmpty && _defaultCardId == null) {
+      _defaultCardId = _cards.first.id;
     }
-    _methods.add(method);
-    notifyListeners();
+
+    _setLoading(false);
   }
 
-  void deleteMethod(String id) {
-    final wasDefault = _methods.firstWhere((m) => m.id == id).isDefault;
-    _methods.removeWhere((m) => m.id == id);
-    if (wasDefault && _methods.isNotEmpty) {
-      _methods[0] = _methods[0].copyWith(isDefault: true);
+  // ── Add a new card ───────────────────────────────────────────────────────
+  Future<bool> addCard() async {
+    if (_stripeCustomerId == null) return false;
+    _setLoading(true);
+
+    final paymentMethodId = await StripeService.instance.addCard(
+      customerId: _stripeCustomerId!,
+    );
+
+    if (paymentMethodId != null) {
+      await loadCards(); // Refresh list from Stripe
+      _defaultCardId ??= paymentMethodId;
+      _setLoading(false);
+      return true;
     }
-    notifyListeners();
+
+    _setLoading(false);
+    return false;
   }
 
-  void setDefault(String id) {
-    _clearDefaults();
-    final index = _methods.indexWhere((m) => m.id == id);
-    if (index != -1) {
-      _methods[index] = _methods[index].copyWith(isDefault: true);
-    }
-    notifyListeners();
-  }
+  // ── Delete a card ────────────────────────────────────────────────────────
+  Future<bool> deleteCard(String paymentMethodId) async {
+    final success = await StripeService.instance.deleteCard(
+      paymentMethodId: paymentMethodId,
+    );
 
-  void _clearDefaults() {
-    for (int i = 0; i < _methods.length; i++) {
-      if (_methods[i].isDefault) {
-        _methods[i] = _methods[i].copyWith(isDefault: false);
+    if (success) {
+      _cards.removeWhere((c) => c.id == paymentMethodId);
+      if (_defaultCardId == paymentMethodId) {
+        _defaultCardId = _cards.isNotEmpty ? _cards.first.id : null;
       }
+      notifyListeners();
     }
+    return success;
+  }
+
+  // ── Set default card ─────────────────────────────────────────────────────
+  void setDefaultCard(String paymentMethodId) {
+    _defaultCardId = paymentMethodId;
+    notifyListeners();
+  }
+
+  // ── Pay for an order ─────────────────────────────────────────────────────
+  Future<PaymentResult> payForOrder({
+    required double amount,
+    required String orderId,
+    String? paymentMethodId, // uses default if null
+  }) async {
+    final pmId = paymentMethodId ?? _defaultCardId;
+
+    if (_stripeCustomerId == null || pmId == null) {
+      return PaymentResult.failure('No payment method selected.');
+    }
+
+    return StripeService.instance.payForOrder(
+      amount: amount,
+      customerId: _stripeCustomerId!,
+      paymentMethodId: pmId,
+      orderId: orderId,
+    );
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
   }
 
   String get uniqueId => DateTime.now().millisecondsSinceEpoch.toString();

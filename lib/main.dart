@@ -7,9 +7,17 @@ import 'package:bike_shop/providers/payment_provider.dart';
 import 'package:bike_shop/providers/product_provider.dart';
 import 'package:bike_shop/screens/main_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Replace with your actual Stripe publishable key
+  Stripe.publishableKey =
+      'pk_test_51SXvBHHKrFDpSpIkVxuXl5nyLySIPsmOBh6EOuy8Ih2xXqdFY3KdaSy0ga75PTjAEpG3wQtaGfKZFnyLr0WOwFD5002qz17NV2';
+  await Stripe.instance.applySettings();
+
   runApp(const BikeShopApp());
 }
 

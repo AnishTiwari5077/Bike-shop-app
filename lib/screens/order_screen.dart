@@ -1,8 +1,8 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/providers/order_provider.dart';
+import 'package:bike_shop/screens/checkout_screen.dart';
 import 'package:bike_shop/screens/order_details_screen.dart';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -82,32 +82,35 @@ class _OrdersScreenState extends State<OrdersScreen>
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: orders.length,
-      itemBuilder: (context, index) {
-        return _buildOrderCard(orders[index]);
-      },
+      itemBuilder: (context, index) => _buildOrderCard(orders[index]),
     );
   }
 
   Widget _buildOrderCard(Order order) {
+    final isPending = order.status == 'pending';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(16),
+        // Highlight unpaid orders
+        border: isPending
+            ? Border.all(color: Colors.orange.withOpacity(0.4), width: 1.5)
+            : null,
       ),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => OrderDetailScreen(order: order)),
-          );
-        },
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => OrderDetailScreen(order: order)),
+        ),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Header ───────────────────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -123,6 +126,8 @@ class _OrdersScreenState extends State<OrdersScreen>
                 ],
               ),
               const SizedBox(height: 12),
+
+              // ── Date & amount ─────────────────────────────────────────
               Row(
                 children: [
                   const Icon(
@@ -146,11 +151,41 @@ class _OrdersScreenState extends State<OrdersScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 '${order.items.length} item${order.items.length > 1 ? 's' : ''}',
                 style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
+
+              // ── Pay Now button (only for pending) ─────────────────────
+              if (isPending) ...[
+                const SizedBox(height: 14),
+                const Divider(color: Colors.white12, height: 1),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CheckoutScreen(order: order),
+                      ),
+                    ),
+                    icon: const Icon(Icons.lock_outline, size: 16),
+                    label: Text(
+                      'Pay Now — \$${order.totalAmount.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentBlue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -165,7 +200,7 @@ class _OrdersScreenState extends State<OrdersScreen>
     switch (status.toLowerCase().trim()) {
       case 'pending':
         color = Colors.orange;
-        label = 'Pending';
+        label = 'Pending Payment';
         break;
       case 'processing':
         color = Colors.blue;
@@ -189,17 +224,17 @@ class _OrdersScreenState extends State<OrdersScreen>
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: .2),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: .5)),
+        border: Border.all(color: color.withOpacity(0.5)),
       ),
       child: Text(
         label,
         style: TextStyle(
           color: color,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
       ),
