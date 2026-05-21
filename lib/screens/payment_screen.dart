@@ -1,8 +1,7 @@
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/models/payment_model.dart';
 import 'package:bike_shop/providers/payment_provider.dart';
+import 'package:bike_shop/service/stripe_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class PaymentMethodsScreen extends StatelessWidget {
@@ -16,29 +15,34 @@ class PaymentMethodsScreen extends StatelessWidget {
       backgroundColor: AppTheme.primaryBackground,
       appBar: AppBar(title: const Text('Payment Methods')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddCard(context),
+        onPressed: () => _addCard(context, provider),
         backgroundColor: AppTheme.accentBlue,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Add Card', style: TextStyle(color: Colors.white)),
       ),
-      body: provider.methods.isEmpty
-          ? _buildEmptyState(context)
+      body: provider.isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.accentBlue),
+            )
+          : provider.error != null
+          ? _buildError(provider.error!)
+          : !provider.hasCards
+          ? _buildEmptyState(context, provider)
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               children: [
-                // Saved cards
-                const _SectionLabel('Saved Cards & Wallets'),
+                const _SectionLabel('SAVED CARDS'),
                 const SizedBox(height: 12),
-                ...provider.methods.map(
-                  (m) => _PaymentCard(
-                    method: m,
-                    onDelete: () => _confirmDelete(context, provider, m),
-                    onSetDefault: () => provider.setDefault(m.id),
+                ...provider.cards.map(
+                  (card) => _StripeCardTile(
+                    card: card,
+                    isDefault: card.id == provider.defaultCardId,
+                    onDelete: () => _confirmDelete(context, provider, card),
+                    onSetDefault: () => provider.setDefaultCard(card.id),
                   ),
                 ),
                 const SizedBox(height: 28),
-                // Digital wallets (static, non-functional — scaffold for future)
-                const _SectionLabel('Other Options'),
+                const _SectionLabel('OTHER OPTIONS'),
                 const SizedBox(height: 12),
                 _DigitalWalletTile(
                   icon: Icons.account_balance_wallet_outlined,
@@ -64,7 +68,33 @@ class PaymentMethodsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Future<void> _addCard(BuildContext context, PaymentProvider provider) async {
+    final success = await provider.addCard();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Card added successfully' : 'Failed to add card',
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildError(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          message,
+          style: const TextStyle(color: Colors.red, fontSize: 16),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, PaymentProvider provider) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -98,7 +128,7 @@ class PaymentMethodsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 28),
           ElevatedButton.icon(
-            onPressed: () => _openAddCard(context),
+            onPressed: () => _addCard(context, provider),
             icon: const Icon(Icons.add),
             label: const Text('Add Card'),
           ),
@@ -107,19 +137,10 @@ class PaymentMethodsScreen extends StatelessWidget {
     );
   }
 
-  void _openAddCard(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _AddCardSheet(),
-    );
-  }
-
   void _confirmDelete(
     BuildContext context,
     PaymentProvider provider,
-    PaymentMethod m,
+    StripeCard card,
   ) {
     showDialog(
       context: context,
@@ -127,11 +148,11 @@ class PaymentMethodsScreen extends StatelessWidget {
         backgroundColor: AppTheme.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
-          'Remove Payment Method?',
+          'Remove Card?',
           style: TextStyle(color: Colors.white),
         ),
         content: Text(
-          'Remove "${m.label}"?',
+          'Remove •••• ${card.last4}?',
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -140,9 +161,9 @@ class PaymentMethodsScreen extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              provider.deleteMethod(m.id);
+            onPressed: () async {
               Navigator.pop(context);
+              await provider.deleteCard(card.id);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Remove'),
@@ -153,31 +174,17 @@ class PaymentMethodsScreen extends StatelessWidget {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  const _SectionLabel(this.text);
+// ── Stripe Card Tile ──────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.white54,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.8,
-      ),
-    );
-  }
-}
-
-class _PaymentCard extends StatelessWidget {
-  final PaymentMethod method;
+class _StripeCardTile extends StatelessWidget {
+  final StripeCard card;
+  final bool isDefault;
   final VoidCallback onDelete;
   final VoidCallback onSetDefault;
 
-  const _PaymentCard({
-    required this.method,
+  const _StripeCardTile({
+    required this.card,
+    required this.isDefault,
     required this.onDelete,
     required this.onSetDefault,
   });
@@ -189,7 +196,7 @@ class _PaymentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: method.isDefault
+        border: isDefault
             ? Border.all(color: AppTheme.accentBlue, width: 1.5)
             : null,
       ),
@@ -200,32 +207,31 @@ class _PaymentCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                _typeIcon(),
+                _brandIcon(),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        method.label,
+                        '${card.brand} •••• ${card.last4}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (method.cardHolder != null)
-                        Text(
-                          method.cardHolder!,
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 13,
-                          ),
+                      Text(
+                        'Expires ${card.expMonth.toString().padLeft(2, '0')}/${card.expYear}',
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 13,
                         ),
+                      ),
                     ],
                   ),
                 ),
-                if (method.isDefault)
+                if (isDefault)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -257,14 +263,7 @@ class _PaymentCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (method.expiryDate != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Expires ${method.expiryDate}',
-                style: const TextStyle(color: Colors.white38, fontSize: 12),
-              ),
-            ],
-            if (!method.isDefault) ...[
+            if (!isDefault) ...[
               const SizedBox(height: 12),
               const Divider(color: Colors.white12, height: 1),
               const SizedBox(height: 10),
@@ -296,49 +295,49 @@ class _PaymentCard extends StatelessWidget {
     );
   }
 
-  Widget _typeIcon() {
-    IconData icon;
-    Color color;
-    switch (method.type) {
-      case PaymentType.card:
-        icon = Icons.credit_card;
-        color = _brandColor(method.cardBrand);
-        break;
-      case PaymentType.paypal:
-        icon = Icons.account_balance_wallet_outlined;
-        color = const Color(0xFF0070BA);
-        break;
-      case PaymentType.applePay:
-        icon = Icons.phone_iphone;
-        color = Colors.white70;
-        break;
-      case PaymentType.googlePay:
-        icon = Icons.g_mobiledata;
-        color = const Color(0xFF4285F4);
-        break;
-    }
-
+  Widget _brandIcon() {
+    final color = _brandColor(card.brand);
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(icon, color: color, size: 24),
+      child: Icon(Icons.credit_card, color: color, size: 24),
     );
   }
 
-  Color _brandColor(String? brand) {
-    switch (brand) {
-      case 'Visa':
+  Color _brandColor(String brand) {
+    switch (brand.toLowerCase()) {
+      case 'visa':
         return const Color(0xFF1A1F71);
-      case 'Mastercard':
+      case 'mastercard':
         return const Color(0xFFEB001B);
-      case 'Amex':
+      case 'amex':
         return const Color(0xFF007BC1);
       default:
         return AppTheme.accentBlue;
     }
+  }
+}
+
+// ── Shared widgets ────────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white54,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.8,
+      ),
+    );
   }
 }
 
@@ -405,449 +404,6 @@ class _DigitalWalletTile extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// ---- Add Card Sheet ----
-
-class _AddCardSheet extends StatefulWidget {
-  const _AddCardSheet();
-
-  @override
-  State<_AddCardSheet> createState() => _AddCardSheetState();
-}
-
-class _AddCardSheetState extends State<_AddCardSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _numberCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
-  final _expiryCtrl = TextEditingController();
-  final _cvvCtrl = TextEditingController();
-  bool _isDefault = false;
-  bool _obscureCvv = true;
-
-  @override
-  void dispose() {
-    _numberCtrl.dispose();
-    _nameCtrl.dispose();
-    _expiryCtrl.dispose();
-    _cvvCtrl.dispose();
-    super.dispose();
-  }
-
-  String _detectBrand(String number) {
-    if (number.startsWith('4')) return 'Visa';
-    if (number.startsWith('5')) return 'Mastercard';
-    if (number.startsWith('3')) return 'Amex';
-    return 'Card';
-  }
-
-  void _save() {
-    if (!_formKey.currentState!.validate()) return;
-    final provider = context.read<PaymentProvider>();
-    final last4 = _numberCtrl.text
-        .replaceAll(' ', '')
-        .substring((_numberCtrl.text.replaceAll(' ', '').length - 4));
-    final brand = _detectBrand(_numberCtrl.text.trim());
-
-    final method = PaymentMethod(
-      id: provider.uniqueId,
-      type: PaymentType.card,
-      label: '$brand ending in $last4',
-      cardNumber: last4,
-      cardHolder: _nameCtrl.text.trim(),
-      expiryDate: _expiryCtrl.text.trim(),
-      cardBrand: brand,
-      isDefault: _isDefault,
-    );
-
-    provider.addMethod(method);
-    Navigator.pop(context);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Card added successfully')));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppTheme.secondaryBackground,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Row(
-                children: [
-                  const Text(
-                    'Add New Card',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(color: Colors.white12),
-            // Card preview
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _CardPreview(
-                number: _numberCtrl.text,
-                name: _nameCtrl.text,
-                expiry: _expiryCtrl.text,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      _buildCardField(
-                        _numberCtrl,
-                        'Card Number',
-                        Icons.credit_card,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          _CardNumberFormatter(),
-                          LengthLimitingTextInputFormatter(19),
-                        ],
-                        validator: (v) {
-                          final digits = (v ?? '').replaceAll(' ', '');
-                          if (digits.length < 16) {
-                            return 'Enter a valid 16-digit card number';
-                          }
-                          return null;
-                        },
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      const SizedBox(height: 14),
-                      _buildCardField(
-                        _nameCtrl,
-                        'Cardholder Name',
-                        Icons.person_outline,
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Required' : null,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildCardField(
-                              _expiryCtrl,
-                              'MM/YY',
-                              Icons.calendar_month_outlined,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                _ExpiryFormatter(),
-                                LengthLimitingTextInputFormatter(5),
-                              ],
-                              validator: (v) {
-                                if (v == null || v.length < 5) {
-                                  return 'Invalid expiry';
-                                }
-                                return null;
-                              },
-                              onChanged: (_) => setState(() {}),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildCardField(
-                              _cvvCtrl,
-                              'CVV',
-                              Icons.lock_outline,
-                              obscureText: _obscureCvv,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(4),
-                              ],
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscureCvv
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: Colors.white38,
-                                  size: 20,
-                                ),
-                                onPressed: () =>
-                                    setState(() => _obscureCvv = !_obscureCvv),
-                              ),
-                              validator: (v) {
-                                if (v == null || v.length < 3) {
-                                  return 'Invalid CVV';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardBackground,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.check_circle_outline,
-                              color: Colors.white54,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text(
-                                'Set as default payment',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                            Switch(
-                              value: _isDefault,
-                              onChanged: (v) => setState(() => _isDefault = v),
-                              activeColor: AppTheme.accentBlue,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: _save,
-                          child: const Text(
-                            'Add Card',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardField(
-    TextEditingController controller,
-    String hint,
-    IconData icon, {
-    bool obscureText = false,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    String? Function(String?)? validator,
-    void Function(String)? onChanged,
-    Widget? suffixIcon,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      onChanged: onChanged,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.white38, size: 20),
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: AppTheme.cardBackground,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.accentBlue, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-      ),
-      validator: validator,
-    );
-  }
-}
-
-// ---- Card Preview Widget ----
-
-class _CardPreview extends StatelessWidget {
-  final String number;
-  final String name;
-  final String expiry;
-
-  const _CardPreview({
-    required this.number,
-    required this.name,
-    required this.expiry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final displayNumber = number.isEmpty
-        ? '**** **** **** ****'
-        : number.padRight(19, '*').substring(0, 19);
-
-    return Container(
-      height: 160,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppTheme.accentBlue, AppTheme.accentBlue.withOpacity(0.6)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Icon(Icons.wifi, color: Colors.white60, size: 28),
-              const Icon(Icons.credit_card, color: Colors.white70, size: 28),
-            ],
-          ),
-          Text(
-            displayNumber,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              letterSpacing: 2,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'CARD HOLDER',
-                    style: TextStyle(color: Colors.white54, fontSize: 10),
-                  ),
-                  Text(
-                    name.isEmpty ? 'YOUR NAME' : name.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'EXPIRES',
-                    style: TextStyle(color: Colors.white54, fontSize: 10),
-                  ),
-                  Text(
-                    expiry.isEmpty ? 'MM/YY' : expiry,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---- Input Formatters ----
-
-class _CardNumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digits = newValue.text.replaceAll(' ', '');
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      if (i > 0 && i % 4 == 0) buffer.write(' ');
-      buffer.write(digits[i]);
-    }
-    final text = buffer.toString();
-    return newValue.copyWith(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-    );
-  }
-}
-
-class _ExpiryFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digits = newValue.text.replaceAll('/', '');
-    String text = digits;
-    if (digits.length >= 2) {
-      text = '${digits.substring(0, 2)}/${digits.substring(2)}';
-    }
-    return newValue.copyWith(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }

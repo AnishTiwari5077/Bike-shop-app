@@ -1,18 +1,38 @@
 import 'package:bike_shop/providers/cart_provider.dart';
 import 'package:bike_shop/providers/favorite_provider.dart';
 import 'package:bike_shop/providers/order_provider.dart';
+import 'package:bike_shop/providers/payment_provider.dart';
 import 'package:bike_shop/screens/address_screen.dart';
-
 import 'package:bike_shop/screens/order_screen.dart';
-
 import 'package:bike_shop/screens/payment_screen.dart';
 import 'package:bike_shop/screens/whilist_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:provider/provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  // Hardcoded for now — replace with real auth user data
+  static const String _userEmail = 'anish@email.com';
+  static const String _userName = 'Anish Sharma';
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Stripe customer once when profile loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PaymentProvider>().initialize(
+        email: _userEmail,
+        name: _userName,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +85,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     const Text(
-                      'Anish@email.com',
+                      _userEmail,
                       style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],
