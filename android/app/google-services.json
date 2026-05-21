@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1007440937952",
+    "project_id": "fir-authetication-c3514",
+    "storage_bucket": "fir-authetication-c3514.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007440937952:android:d5c0a35a000cefbe372185",
+        "android_client_info": {
+          "package_name": "com.example.bike_shop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGpr5Mc6DmGqfQYOcwVxNzd6Lu5DrUXNE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007440937952:android:16a0666acff3faee372185",
+        "android_client_info": {
+          "package_name": "com.example.firebase_authentication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGpr5Mc6DmGqfQYOcwVxNzd6Lu5DrUXNE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
