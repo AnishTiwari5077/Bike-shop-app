@@ -28,7 +28,7 @@ class BikeShopApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'Bike Shop',
+        title: 'Bike Shops',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         home: const MainScreen(),
