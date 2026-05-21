@@ -1,7 +1,11 @@
 import 'package:bike_shop/providers/cart_provider.dart';
 import 'package:bike_shop/providers/favorite_provider.dart';
 import 'package:bike_shop/providers/order_provider.dart';
+import 'package:bike_shop/screens/address_screen.dart';
+
 import 'package:bike_shop/screens/order_screen.dart';
+
+import 'package:bike_shop/screens/payment_screen.dart';
 import 'package:bike_shop/screens/whilist_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:bike_shop/config/theme.dart';
@@ -43,10 +47,6 @@ class ProfileScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 3),
-                        image: const DecorationImage(
-                          image: AssetImage('assets/images/profile.png'),
-                          fit: BoxFit.cover,
-                        ),
                         color: Colors.grey[700],
                       ),
                       child: const Icon(
@@ -127,40 +127,44 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.list_alt,
                     title: 'My Orders',
                     subtitle: 'Track your orders',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const OrdersScreen()),
-                      );
-                    },
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OrdersScreen()),
+                    ),
                   ),
                   _buildMenuItem(
                     context,
                     icon: Icons.favorite_border,
                     title: 'Wishlist',
                     subtitle: 'Your favorite items',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const WishlistScreen(),
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const WishlistScreen()),
+                    ),
                   ),
                   _buildMenuItem(
                     context,
                     icon: Icons.location_on_outlined,
                     title: 'Addresses',
                     subtitle: 'Manage delivery addresses',
-                    onTap: () {},
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AddressesScreen(),
+                      ),
+                    ),
                   ),
                   _buildMenuItem(
                     context,
                     icon: Icons.payment,
                     title: 'Payment Methods',
                     subtitle: 'Manage payment options',
-                    onTap: () {},
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PaymentMethodsScreen(),
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 24),
@@ -207,9 +211,7 @@ class ProfileScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        _showLogoutDialog(context);
-                      },
+                      onPressed: () => _showLogoutDialog(context),
                       icon: const Icon(Icons.logout),
                       label: const Text('Logout'),
                       style: OutlinedButton.styleFrom(
@@ -282,7 +284,7 @@ class ProfileScreen extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.accentBlue.withValues(alpha: .1),
+            color: AppTheme.accentBlue.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: AppTheme.accentBlue),
