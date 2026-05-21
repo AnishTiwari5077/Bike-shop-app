@@ -1,8 +1,10 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
+import 'package:bike_shop/providers/auth_provider.dart';
 import 'package:bike_shop/providers/order_provider.dart';
 import 'package:bike_shop/providers/payment_provider.dart';
 import 'package:bike_shop/screens/order_screen.dart';
+import 'package:bike_shop/service/notification_service.dart';
 import 'package:bike_shop/service/stripe_service.dart';
 
 import 'package:flutter/material.dart';
@@ -42,6 +44,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final paymentProvider = context.read<PaymentProvider>();
     final ordersProvider = context.read<OrdersProvider>();
+    final authProvider = context.read<AuthProvider>();
 
     final result = await paymentProvider.payForOrder(
       amount: widget.order.totalAmount,
@@ -53,8 +56,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     setState(() => _isPaying = false);
 
     if (result.isSuccess) {
-      // Move order to "delivered" (completed)
       ordersProvider.updateOrderStatus(widget.order.id, 'delivered');
+
+      // ── Push notification ────────────────────────────────────────────
+      await NotificationService.instance.showPaymentSuccessNotification(
+        orderId: widget.order.id,
+        amount: widget.order.totalAmount * 1.08,
+      );
+
+      // ── Email notification ───────────────────────────────────────────
+      if (authProvider.isSignedIn) {
+        await NotificationService.instance.sendPaymentConfirmationEmail(
+          email: authProvider.email,
+          name: authProvider.displayName,
+          orderId: widget.order.id,
+          amount: widget.order.totalAmount * 1.08,
+          items: widget.order.items
+              .map(
+                (i) => {
+                  'title': i.product.title,
+                  'quantity': i.quantity,
+                  'price': i.totalPrice,
+                },
+              )
+              .toList(),
+        );
+      }
+
       _showSuccessSheet();
     } else {
       _showError(result.errorMessage ?? 'Payment failed. Please try again.');
