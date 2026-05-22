@@ -1,17 +1,31 @@
+import 'dart:convert';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class ProductsProvider with ChangeNotifier {
   List<Product> _products = [];
   bool _isLoading = false;
+  String? _error;
   String _searchQuery = '';
   String _selectedCategory = 'all';
 
+  // ── Must match StripeService._baseUrl ────────────────────────────────────
+  // Android emulator  → 'http://10.0.2.2:3000'
+  // iOS simulator     → 'http://localhost:3000'
+  // Physical device   → 'http://<your-local-IP>:3000'
+  //  static const String _baseUrl = 'http://10.0.2.2:3000';
+  static const String _baseUrl = 'http://192.168.1.6:3000';
+  // static const String _baseUrl = 'http://10.0.2.2:3000';
+
+  // ── Getters ───────────────────────────────────────────────────────────────
   List<Product> get products => _products;
   bool get isLoading => _isLoading;
+  String? get error => _error;
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
 
+  /// Client-side filter — used by ProductGrid, WishlistScreen, ExploreScreen
   List<Product> get displayedProducts {
     return _products.where((product) {
       final matchesSearch =
@@ -23,10 +37,7 @@ class ProductsProvider with ChangeNotifier {
     }).toList();
   }
 
-  void setProducts(List<Product> products) {
-    _products = products;
-    notifyListeners();
-  }
+  // ── Actions ───────────────────────────────────────────────────────────────
 
   void setSearchQuery(String query) {
     _searchQuery = query;
@@ -38,111 +49,77 @@ class ProductsProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Load products from MongoDB via API ────────────────────────────────────
   Future<void> loadProducts() async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final uri = Uri.parse('$_baseUrl/products');
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
-    _products = _getDummyProducts();
-    _isLoading = false;
-    notifyListeners();
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final List<dynamic> productsJson = data['products'] as List<dynamic>;
+
+        _products = productsJson
+            .map((json) => Product.fromMap(json as Map<String, dynamic>))
+            .toList();
+
+        _error = null;
+        debugPrint('✅ Loaded ${_products.length} products from MongoDB');
+      } else {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        _error = body['error'] as String? ?? 'Failed to load products';
+        debugPrint('❌ loadProducts HTTP error: $_error');
+      }
+    } catch (e) {
+      _error = 'Could not connect to server. Please check your connection.';
+      debugPrint('❌ loadProducts exception: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> refreshProducts() async {
     await loadProducts();
   }
 
+  // ── Fetch a single product by Mongo ID ───────────────────────────────────
+  Future<Product?> fetchProductById(String id) async {
+    // Return from cache if already loaded
+    try {
+      return _products.firstWhere((p) => p.id == id);
+    } catch (_) {}
+
+    // Otherwise fetch from API
+    try {
+      final res = await http
+          .get(Uri.parse('$_baseUrl/products/$id'))
+          .timeout(const Duration(seconds: 10));
+
+      if (res.statusCode == 200) {
+        return Product.fromMap(jsonDecode(res.body) as Map<String, dynamic>);
+      }
+    } catch (e) {
+      debugPrint('fetchProductById exception: $e');
+    }
+    return null;
+  }
+
+  /// Synchronous cache lookup — used where an async call isn't possible
   Product? getProductById(String id) {
     try {
-      return _products.firstWhere((product) => product.id == id);
-    } catch (e) {
+      return _products.firstWhere((p) => p.id == id);
+    } catch (_) {
       return null;
     }
   }
 
-  List<Product> _getDummyProducts() {
-    return [
-      Product(
-        id: '1',
-        title: 'PEUGEOT - LR01',
-        subtitle: 'Road Bike',
-        price: 1999.99,
-        imageUrl: 'assets/images/bike.png',
-        description:
-            'A lightweight, high-performance road bike with steel frame and responsive geometry.',
-        rating: 4.8,
-        category: 'road',
-        maxStock: 10,
-      ),
-      Product(
-        id: '2',
-        title: 'SMITH - Trade',
-        subtitle: 'Road Helmet',
-        price: 120.00,
-        imageUrl: 'assets/images/bike.png',
-        images: [
-          'assets/images/bike.png',
-          'assets/images/bike.png',
-          'assets/images/bike.png',
-          'assets/images/bike.png',
-          'assets/images/bike.png',
-          'assets/images/bike.png',
-        ],
-        description:
-            'A durable road helmet with advanced airflow and impact protection for safety.',
-        rating: 4.5,
-        category: 'accessories',
-        maxStock: 50,
-      ),
-      Product(
-        id: '3',
-        title: 'PILOT - Chromoly',
-        subtitle: 'Mountain Bike',
-        price: 2199.00,
-        imageUrl: 'assets/images/bike.png',
-        description:
-            'Built for trails and tough terrain. Chromoly steel frame ensures durability and control.',
-        rating: 4.9,
-        category: 'mountain',
-        maxStock: 8,
-      ),
-      Product(
-        id: '4',
-        title: 'TREK - FX 3',
-        subtitle: 'Hybrid Bike',
-        price: 849.99,
-        imageUrl: 'assets/images/bike.png',
-        description:
-            'Perfect for commuting and fitness rides with lightweight aluminum frame.',
-        rating: 4.6,
-        category: 'mountain',
-        maxStock: 15,
-      ),
-      Product(
-        id: '5',
-        title: 'VOLT - E-Cruiser',
-        subtitle: 'Electric Bike',
-        price: 3299.00,
-        imageUrl: 'assets/images/bike.png',
-        description:
-            'Powerful electric bike with 50-mile range and pedal assist technology.',
-        rating: 4.7,
-        category: 'accessories',
-        maxStock: 5,
-      ),
-      Product(
-        id: '6',
-        title: 'GIRO - Syntax',
-        subtitle: 'Cycling Helmet',
-        price: 199.99,
-        imageUrl: 'assets/images/bike.png',
-        description: 'Premium helmet with MIPS technology for enhanced safety.',
-        rating: 4.8,
-        category: 'accessories',
-        maxStock: 30,
-      ),
-    ];
+  void clearError() {
+    _error = null;
+    notifyListeners();
   }
 }
