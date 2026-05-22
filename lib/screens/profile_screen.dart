@@ -11,6 +11,105 @@ import 'package:flutter/material.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:provider/provider.dart';
 
+// ============================================================================
+// Placeholder screens for Settings – you can implement these later
+// ============================================================================
+class NotificationsSettingsScreen extends StatelessWidget {
+  const NotificationsSettingsScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.primaryBackground,
+      appBar: AppBar(title: const Text('Notifications')),
+      body: const Center(
+        child: Text(
+          'Notification settings will be here',
+          style: TextStyle(color: Colors.white54),
+        ),
+      ),
+    );
+  }
+}
+
+class PrivacySecurityScreen extends StatelessWidget {
+  const PrivacySecurityScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.primaryBackground,
+      appBar: AppBar(title: const Text('Privacy & Security')),
+      body: const Center(
+        child: Text(
+          'Privacy & security options will be here',
+          style: TextStyle(color: Colors.white54),
+        ),
+      ),
+    );
+  }
+}
+
+class HelpSupportScreen extends StatelessWidget {
+  const HelpSupportScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.primaryBackground,
+      appBar: AppBar(title: const Text('Help & Support')),
+      body: const Center(
+        child: Text(
+          'FAQ and support options will be here',
+          style: TextStyle(color: Colors.white54),
+        ),
+      ),
+    );
+  }
+}
+
+class AboutScreen extends StatelessWidget {
+  const AboutScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.primaryBackground,
+      appBar: AppBar(title: const Text('About')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.bike_scooter,
+              size: 80,
+              color: AppTheme.accentBlue,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Bike Shop App',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Version 1.0.0',
+              style: TextStyle(color: Colors.white54, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '© 2025 Bike Shop',
+              style: TextStyle(color: Colors.white54),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Main Profile Screen
+// ============================================================================
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -62,10 +161,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 48),
-                    // Avatar
                     _buildAvatar(auth),
                     const SizedBox(height: 12),
-                    // Name
                     Text(
                       auth.isSignedIn ? auth.displayName : 'Guest',
                       style: const TextStyle(
@@ -74,7 +171,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    // Email
                     if (auth.isSignedIn)
                       Text(
                         auth.email,
@@ -207,33 +303,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
 
+                  // ✅ Updated icons for Settings items
                   _buildMenuItem(
                     context,
                     icon: Icons.notifications_outlined,
                     title: 'Notifications',
                     subtitle: 'Manage notifications',
-                    onTap: () {},
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationsSettingsScreen(),
+                      ),
+                    ),
                   ),
                   _buildMenuItem(
                     context,
-                    icon: Icons.security,
+                    icon: Icons
+                        .privacy_tip_outlined, // ✅ changed from Icons.security
                     title: 'Privacy & Security',
                     subtitle: 'Manage your privacy',
-                    onTap: () {},
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacySecurityScreen(),
+                      ),
+                    ),
                   ),
                   _buildMenuItem(
                     context,
                     icon: Icons.help_outline,
                     title: 'Help & Support',
                     subtitle: 'Get help and support',
-                    onTap: () {},
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HelpSupportScreen(),
+                      ),
+                    ),
                   ),
                   _buildMenuItem(
                     context,
                     icon: Icons.info_outline,
                     title: 'About',
                     subtitle: 'App version 1.0.0',
-                    onTap: () {},
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AboutScreen()),
+                    ),
                   ),
 
                   const SizedBox(height: 24),
@@ -349,8 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Google G logo (colored squares)
-                  _GoogleLogo(),
+                  const _GoogleLogo(),
                   const SizedBox(width: 12),
                   const Text(
                     'Continue with Google',
@@ -498,13 +613,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(dialogContext); // close dialog first
-
-              // Reset payment before signing out
+              Navigator.pop(dialogContext);
               context.read<PaymentProvider>().reset();
               await auth.signOut();
-
-              // Use mounted check + root scaffold messenger
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Logged out successfully')),
@@ -520,8 +631,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// ── Google Logo Widget ────────────────────────────────────────────────────────
+// ── Google Logo Widget (unchanged) ──────────────────────────────────────────
 class _GoogleLogo extends StatelessWidget {
+  const _GoogleLogo();
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -536,23 +648,18 @@ class _GoogleLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final double s = size.width;
-
-    // Blue (top-left)
     canvas.drawRect(
       Rect.fromLTWH(0, 0, s / 2, s / 2),
       Paint()..color = const Color(0xFF4285F4),
     );
-    // Red (top-right)
     canvas.drawRect(
       Rect.fromLTWH(s / 2, 0, s / 2, s / 2),
       Paint()..color = const Color(0xFFEA4335),
     );
-    // Yellow (bottom-left)
     canvas.drawRect(
       Rect.fromLTWH(0, s / 2, s / 2, s / 2),
       Paint()..color = const Color(0xFFFBBC05),
     );
-    // Green (bottom-right)
     canvas.drawRect(
       Rect.fromLTWH(s / 2, s / 2, s / 2, s / 2),
       Paint()..color = const Color(0xFF34A853),
