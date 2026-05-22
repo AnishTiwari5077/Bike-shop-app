@@ -3,6 +3,7 @@ import 'package:bike_shop/providers/address_provider.dart';
 import 'package:bike_shop/providers/auth_provider.dart';
 import 'package:bike_shop/providers/cart_provider.dart';
 import 'package:bike_shop/providers/favorite_provider.dart';
+import 'package:bike_shop/providers/notification_provider.dart';
 import 'package:bike_shop/providers/order_provider.dart';
 import 'package:bike_shop/providers/payment_provider.dart';
 import 'package:bike_shop/providers/product_provider.dart';
@@ -110,6 +111,7 @@ class BikeShopApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
         ChangeNotifierProvider(create: (_) => AddressProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(
           create: (_) => ProductsProvider()..loadProducts(),
         ),

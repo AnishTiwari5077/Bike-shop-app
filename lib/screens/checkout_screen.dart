@@ -1,6 +1,7 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/providers/auth_provider.dart';
+import 'package:bike_shop/providers/notification_provider.dart';
 import 'package:bike_shop/providers/order_provider.dart';
 import 'package:bike_shop/providers/payment_provider.dart';
 import 'package:bike_shop/screens/add_card_screen.dart'; // <-- import the new screen
@@ -57,7 +58,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (result.isSuccess) {
       ordersProvider.updateOrderStatus(widget.order.id, 'delivered');
 
-      // Push notification
+      // ─── Add to notification list (persistent) ───
+      final notificationProvider = context.read<NotificationProvider>();
+      notificationProvider.addNotification(
+        'Payment Successful',
+        'Order #${widget.order.id.substring(0, 8)} - \$${(widget.order.totalAmount * 1.08).toStringAsFixed(2)} charged.',
+      );
+
+      // Push notification (popup)
       await NotificationService.instance.showPaymentSuccessNotification(
         orderId: widget.order.id,
         amount: widget.order.totalAmount * 1.08,
