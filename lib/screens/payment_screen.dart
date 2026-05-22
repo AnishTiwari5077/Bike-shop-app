@@ -1,6 +1,7 @@
 import 'package:bike_shop/providers/auth_provider.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/providers/payment_provider.dart';
+import 'package:bike_shop/screens/add_card_screen.dart';
 import 'package:bike_shop/service/stripe_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -72,7 +73,7 @@ class PaymentMethodsScreen extends StatelessWidget {
   Future<void> _addCard(BuildContext context, PaymentProvider provider) async {
     final authProvider = context.read<AuthProvider>();
 
-    // ── Bug 1 & 2 fix: check sign-in FIRST ──────────────────────────────
+    // Check sign-in first
     if (!authProvider.isSignedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -90,7 +91,7 @@ class PaymentMethodsScreen extends StatelessWidget {
       return;
     }
 
-    // ── Auto-initialize if needed (signed in but not yet initialized) ────
+    // Auto-initialize if needed
     if (!provider.isInitialized) {
       await provider.initialize(
         email: authProvider.email,
@@ -112,33 +113,8 @@ class PaymentMethodsScreen extends StatelessWidget {
       }
     }
 
-    final success = await provider.addCard();
-    if (!context.mounted) return;
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('Card added successfully'),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else if (provider.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.error!),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-    // null + no error = user cancelled sheet → silent
+    // Navigate to AddCardScreen instead of opening native sheet
+    await AddCardScreen.show(context);
   }
 
   Widget _buildError(String message) {
@@ -241,7 +217,7 @@ class PaymentMethodsScreen extends StatelessWidget {
   }
 }
 
-// ── Rest of widgets unchanged ────────────────────────────────────────────────
+// ── Widgets ──────────────────────────────────────────────────────────────────
 
 class _StripeCardTile extends StatelessWidget {
   final StripeCard card;

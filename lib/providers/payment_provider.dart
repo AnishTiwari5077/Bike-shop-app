@@ -1,12 +1,13 @@
 import 'package:bike_shop/service/stripe_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 class PaymentProvider with ChangeNotifier {
   String? _stripeCustomerId;
   List<StripeCard> _cards = [];
   String? _defaultCardId;
   bool _isLoading = false;
-  bool _isAddingCard = false; // ← prevents reset during active sheet
+  bool _isAddingCard = false;
   String? _error;
   bool _initialized = false;
 
@@ -79,47 +80,76 @@ class PaymentProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> addCard() async {
+  // ─── NEW: Add card using plain text fields (no native Stripe UI) ─────────
+  Future<bool> addCardWithPlainDetails({
+    required String cardNumber,
+    required String expiry, // format "MM/YY"
+    required String cvc,
+  }) async {
     if (_stripeCustomerId == null) {
       _error = 'Payment service not initialized.';
       notifyListeners();
       return false;
     }
 
+    // Parse expiry
+    final expiryParts = expiry.split('/');
+    if (expiryParts.length != 2) {
+      _error = 'Invalid expiry format. Use MM/YY.';
+      notifyListeners();
+      return false;
+    }
+    final expMonth = int.parse(expiryParts[0]);
+    final expYear = int.parse(expiryParts[1]);
+
     _isAddingCard = true;
     _setLoading(true);
-
-    // Capture customerId locally — safe even if reset() is called
-    final customerId = _stripeCustomerId!;
+    _error = null;
 
     try {
-      debugPrint('PaymentProvider: opening Stripe card sheet');
-      final paymentMethodId = await StripeService.instance.addCard(
-        customerId: customerId,
+      // 1. Create a Stripe token using REST API (no native SDK call)
+      final tokenId = await StripeService.instance.createTokenFromCard(
+        number: cardNumber.replaceAll(RegExp(r'\s+'), ''),
+        expMonth: expMonth,
+        expYear: expYear,
+        cvc: cvc,
       );
-
-      // If reset was called while sheet was open, abort silently
-      if (_stripeCustomerId == null) {
-        debugPrint('PaymentProvider: reset during addCard — aborting');
+      if (tokenId == null) {
+        _error = 'Invalid card details. Please check and try again.';
         return false;
       }
 
-      if (paymentMethodId != null) {
-        debugPrint('PaymentProvider: card added → $paymentMethodId');
-        await loadCards();
-        _defaultCardId ??= paymentMethodId;
-        return true;
+      // 2. Send token to backend to create PaymentMethod and attach to customer
+      final paymentMethodId = await StripeService.instance
+          .attachTokenToCustomer(
+            customerId: _stripeCustomerId!,
+            tokenId: tokenId,
+          );
+      if (paymentMethodId == null) {
+        _error = 'Failed to save card. Please try again.';
+        return false;
       }
 
-      debugPrint('PaymentProvider: addCard cancelled or failed');
-      return false;
+      // 3. Reload cards list
+      await loadCards();
+      _defaultCardId ??= paymentMethodId;
+      return true;
     } catch (e) {
-      debugPrint('PaymentProvider addCard error: $e');
+      _error = 'Unexpected error: $e';
+      debugPrint('addCardWithPlainDetails error: $e');
       return false;
     } finally {
       _isAddingCard = false;
       _setLoading(false);
     }
+  }
+
+  // ─── Deprecated: keep only if you still use CardField somewhere ─────────
+  Future<bool> addCardWithDetails(CardFieldInputDetails cardDetails) async {
+    // You can keep this for backward compatibility, but better to remove it.
+    _error = 'This method is deprecated. Use addCardWithPlainDetails instead.';
+    notifyListeners();
+    return false;
   }
 
   Future<bool> deleteCard(String paymentMethodId) async {
@@ -171,11 +201,9 @@ class PaymentProvider with ChangeNotifier {
     }
   }
 
-  // Safe reset — waits if card sheet is open
   void reset() {
     if (_isAddingCard) {
-      debugPrint('PaymentProvider: reset deferred — card sheet is open');
-      // Just clear the customer so addCard aborts gracefully after sheet closes
+      debugPrint('PaymentProvider: reset deferred — card is being added');
       _stripeCustomerId = null;
       _initialized = false;
       return;
@@ -186,6 +214,11 @@ class PaymentProvider with ChangeNotifier {
     _isLoading = false;
     _error = null;
     _initialized = false;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _error = null;
     notifyListeners();
   }
 

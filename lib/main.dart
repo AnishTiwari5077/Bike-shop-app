@@ -49,14 +49,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       >()
       ?.createNotificationChannel(channel);
 
-  // 5. Show the notification
+  // 5. Show the notification – ICON REMOVED to avoid resource not found error
   const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
     'bike_shop_payments',
     'Payment Notifications',
     channelDescription: 'Notifications for payment and order updates',
     importance: Importance.high,
     priority: Priority.high,
-    icon: 'ic_launcher',
+    // icon: 'ic_launcher', // <-- REMOVED – causes "resource not found"
   );
   const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
   const NotificationDetails details = NotificationDetails(
@@ -78,9 +78,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ─── Image cache limit (prevents memory bloat) ───────────────────────
-  PaintingBinding.instance.imageCache.maximumSize = 100;
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 50 << 20; // 50 MB
+  // ─── Image cache limit (prevents memory issues) ──────────────────────
+  PaintingBinding.instance.imageCache.maximumSize = 20; // was 100
+  PaintingBinding.instance.imageCache.maximumSizeBytes =
+      10 << 20; // 10MB, was 50MB
 
   await Firebase.initializeApp();
 
