@@ -1,19 +1,12 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
 
-/// Central service for all Stripe operations.
-/// All communication with your Node backend goes through here.
 class StripeService {
   StripeService._();
   static final StripeService instance = StripeService._();
 
-  // ── Change this to your backend URL ─────────────────────────────────────
-  // For local development: 'http://10.0.2.2:3000'  (Android emulator)
-  //                        'http://localhost:3000'  (iOS simulator)
-  // For production: 'https://your-backend.com'
   // static const String _baseUrl = 'http://10.0.2.2:3000';
   static const String _baseUrl = 'http://192.168.1.6:3000';
 
@@ -40,44 +33,90 @@ class StripeService {
     }
   }
 
-  // ── Add a new card (SetupIntent flow) ───────────────────────────────────
-  /// Returns the Stripe paymentMethodId if successful, null otherwise.
-  Future<String?> addCard({required String customerId}) async {
+  // ─── NEW: Create a Stripe token from raw card details (REST API) ─────────
+  Future<String?> createTokenFromCard({
+    required String number,
+    required int expMonth,
+    required int expYear,
+    required String cvc,
+  }) async {
     try {
-      // 1. Ask backend for a SetupIntent clientSecret
-      final res = await http.post(
-        Uri.parse('$_baseUrl/create-setup-intent'),
-        headers: _headers,
-        body: jsonEncode({'customerId': customerId}),
+      final response = await http.post(
+        Uri.parse('https://api.stripe.com/v1/tokens'),
+        headers: {
+          'Authorization': 'Bearer ${Stripe.publishableKey}',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'card[number]': number,
+          'card[exp_month]': expMonth.toString(),
+          'card[exp_year]': expYear.toString(),
+          'card[cvc]': cvc,
+        },
       );
-      final data = jsonDecode(res.body);
-      if (res.statusCode != 200) {
-        debugPrint('create-setup-intent error: ${data['error']}');
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['id'] != null) {
+        debugPrint('✅ Token created: ${data['id']}');
+        return data['id'] as String;
+      } else {
+        debugPrint('❌ Stripe token error: ${data['error']['message']}');
         return null;
       }
-      final clientSecret = data['clientSecret'] as String;
+    } catch (e) {
+      debugPrint('createTokenFromCard exception: $e');
+      return null;
+    }
+  }
 
-      // 2. Show Stripe's native card sheet
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          setupIntentClientSecret: clientSecret,
-          merchantDisplayName: 'Bike Shop',
-          style: ThemeMode.dark,
-        ),
+  // ─── NEW: Attach a token to a customer using backend /attach-token ───────
+  Future<String?> attachTokenToCustomer({
+    required String customerId,
+    required String tokenId,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$_baseUrl/attach-token'),
+        headers: _headers,
+        body: jsonEncode({'customerId': customerId, 'tokenId': tokenId}),
       );
-      await Stripe.instance.presentPaymentSheet();
-
-      // 3. Retrieve the PaymentMethod that was just attached
-      //    (SetupIntent stores it on the customer automatically)
-      final setupIntent = await Stripe.instance.retrieveSetupIntent(
-        clientSecret,
-      );
-      return setupIntent.paymentMethodId;
-    } on StripeException catch (e) {
-      debugPrint('StripeException (addCard): ${e.error.localizedMessage}');
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200 && data['paymentMethodId'] != null) {
+        debugPrint(
+          '✅ Token attached, paymentMethodId: ${data['paymentMethodId']}',
+        );
+        return data['paymentMethodId'] as String;
+      }
+      debugPrint('❌ attachTokenToCustomer error: ${data['error']}');
       return null;
     } catch (e) {
-      debugPrint('addCard exception: $e');
+      debugPrint('attachTokenToCustomer exception: $e');
+      return null;
+    }
+  }
+
+  // ── Add a new card via CardField (deprecated – kept for compatibility) ──
+  Future<String?> attachCardToCustomer({
+    required String customerId,
+    required String paymentMethodId,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$_baseUrl/attach-payment-method'),
+        headers: _headers,
+        body: jsonEncode({
+          'customerId': customerId,
+          'paymentMethodId': paymentMethodId,
+        }),
+      );
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200) {
+        debugPrint('attachCardToCustomer success: $paymentMethodId');
+        return paymentMethodId;
+      }
+      debugPrint('attachCardToCustomer error: ${data['error']}');
+      return null;
+    } catch (e) {
+      debugPrint('attachCardToCustomer exception: $e');
       return null;
     }
   }
@@ -117,7 +156,6 @@ class StripeService {
   }
 
   // ── Pay for an order ─────────────────────────────────────────────────────
-  /// Returns a [PaymentResult] with success/failure details.
   Future<PaymentResult> payForOrder({
     required double amount,
     required String customerId,
@@ -126,7 +164,6 @@ class StripeService {
     String currency = 'usd',
   }) async {
     try {
-      // 1. Create PaymentIntent on the backend
       final res = await http.post(
         Uri.parse('$_baseUrl/create-payment-intent'),
         headers: _headers,
@@ -146,7 +183,7 @@ class StripeService {
 
       final clientSecret = data['clientSecret'] as String;
 
-      // 2. Confirm the payment on the Flutter side (handles 3DS automatically)
+      // Confirm payment — no sheet opened, handles 3DS automatically
       await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: clientSecret,
         data: PaymentMethodParams.cardFromMethodId(
@@ -171,7 +208,7 @@ class StripeService {
 // ── Data models ─────────────────────────────────────────────────────────────
 
 class StripeCard {
-  final String id; // Stripe paymentMethodId (pm_xxx)
+  final String id;
   final String brand;
   final String last4;
   final int expMonth;

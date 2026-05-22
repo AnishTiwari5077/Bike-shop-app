@@ -1,5 +1,5 @@
 import 'dart:convert';
-//import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -15,14 +15,14 @@ class NotificationService {
 
   static const String _baseUrl = 'http://10.0.2.2:3000';
 
-  // ─── Initialization (call this in main()) ──────────────────────────────
+  // ─── Initialization ──────────────────────────────────────────────
   Future<void> initialize() async {
-    // 1. Request FCM permissions
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
 
-    // 2. Configure initialization settings for local notifications
-    const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const AndroidInitializationSettings
+    androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    ); // only used for the app icon in the notification drawer, not for the small icon
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings();
     const InitializationSettings initSettings = InitializationSettings(
@@ -30,14 +30,12 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    // 3. Initialize the plugin with required 'settings' argument
     await _localNotifications.initialize(
       settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTap,
       onDidReceiveBackgroundNotificationResponse: _notificationTapBackground,
     );
 
-    // 4. Create Android notification channel (required for heads-up)
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'bike_shop_payments',
       'Payment Notifications',
@@ -50,28 +48,26 @@ class NotificationService {
         >()
         ?.createNotificationChannel(channel);
 
-    // 5. Handle FCM messages while app is in foreground
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
-    // 6. Optional: get and log the FCM token
     final String? token = await _fcm.getToken();
     debugPrint('FCM Token: $token');
   }
 
-  // ─── Local notification helpers ───────────────────────────────────────
+  // ─── Local notification helper (ICON REMOVED) ───────────────────
   Future<void> _showLocalNotification({
     required String title,
     required String body,
   }) async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'bike_shop_payments',
-          'Payment Notifications',
-          channelDescription: 'Notifications for payment and order updates',
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: 'ic_launcher',
-        );
+    const AndroidNotificationDetails
+    androidDetails = AndroidNotificationDetails(
+      'bike_shop_payments',
+      'Payment Notifications',
+      channelDescription: 'Notifications for payment and order updates',
+      importance: Importance.high,
+      priority: Priority.high,
+      // icon: 'ic_launcher', // <-- REMOVED – causes resource not found error
+    );
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
     const NotificationDetails details = NotificationDetails(
       android: androidDetails,
@@ -90,14 +86,12 @@ class NotificationService {
   // Called when user taps a notification while app is in foreground
   void _onNotificationTap(NotificationResponse response) {
     debugPrint('Notification tapped (foreground): ${response.payload}');
-    // Add navigation logic here (e.g., using a global navigator key)
   }
 
   // Called when user taps a notification while app is in background/terminated
   @pragma('vm:entry-point')
   static void _notificationTapBackground(NotificationResponse response) {
     debugPrint('Notification tapped (background): ${response.payload}');
-    // Handle background tap – you can send an isolate‑safe message
   }
 
   // ─── FCM foreground handler ──────────────────────────────────────────
@@ -108,7 +102,7 @@ class NotificationService {
     );
   }
 
-  // ─── Public methods (your original API) ──────────────────────────────
+  // ─── Public methods ──────────────────────────────────────────────
   Future<void> showPaymentSuccessNotification({
     required String orderId,
     required double amount,

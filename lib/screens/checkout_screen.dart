@@ -3,16 +3,16 @@ import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/providers/auth_provider.dart';
 import 'package:bike_shop/providers/order_provider.dart';
 import 'package:bike_shop/providers/payment_provider.dart';
+import 'package:bike_shop/screens/add_card_screen.dart'; // <-- import the new screen
 import 'package:bike_shop/screens/order_screen.dart';
+//import 'package:bike_shop/screens/orders_screen.dart';
 import 'package:bike_shop/service/notification_service.dart';
 import 'package:bike_shop/service/stripe_service.dart';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Order order;
-
   const CheckoutScreen({super.key, required this.order});
 
   @override
@@ -26,7 +26,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-select the default card
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<PaymentProvider>();
       setState(() => _selectedCardId = provider.defaultCardId);
@@ -58,13 +57,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (result.isSuccess) {
       ordersProvider.updateOrderStatus(widget.order.id, 'delivered');
 
-      // ── Push notification ────────────────────────────────────────────
+      // Push notification
       await NotificationService.instance.showPaymentSuccessNotification(
         orderId: widget.order.id,
         amount: widget.order.totalAmount * 1.08,
       );
 
-      // ── Email notification ───────────────────────────────────────────
+      // Email notification
       if (authProvider.isSignedIn) {
         await NotificationService.instance.sendPaymentConfirmationEmail(
           email: authProvider.email,
@@ -115,7 +114,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       builder: (_) => _PaymentSuccessSheet(
         order: widget.order,
         onDone: () {
-          // Pop both the sheet and the checkout screen, go to Orders
+          // Pop sheet + checkout, go to Orders
           Navigator.of(context)
             ..pop() // sheet
             ..pop() // checkout
@@ -127,93 +126,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
-  @override
-  Widget build(BuildContext context) {
-    final paymentProvider = context.watch<PaymentProvider>();
-
-    return Scaffold(
-      backgroundColor: AppTheme.primaryBackground,
-      appBar: AppBar(title: const Text('Checkout')),
-      body: paymentProvider.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.accentBlue),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Order summary ────────────────────────────────────────
-                  _SectionHeader(
-                    icon: Icons.receipt_long_outlined,
-                    title: 'Order Summary',
-                  ),
-                  const SizedBox(height: 12),
-                  _OrderSummaryCard(order: widget.order),
-
-                  const SizedBox(height: 28),
-
-                  // ── Payment method ───────────────────────────────────────
-                  _SectionHeader(
-                    icon: Icons.credit_card,
-                    title: 'Payment Method',
-                    trailing: paymentProvider.hasCards
-                        ? TextButton.icon(
-                            onPressed: () => _addCard(paymentProvider),
-                            icon: const Icon(
-                              Icons.add,
-                              size: 16,
-                              color: AppTheme.accentBlue,
-                            ),
-                            label: const Text(
-                              'Add Card',
-                              style: TextStyle(color: AppTheme.accentBlue),
-                            ),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-
-                  if (!paymentProvider.hasCards)
-                    _EmptyCardsWidget(
-                      onAddCard: () => _addCard(paymentProvider),
-                    )
-                  else
-                    ...paymentProvider.cards.map(
-                      (card) => _CardTile(
-                        card: card,
-                        isSelected: _selectedCardId == card.id,
-                        onTap: () => setState(() => _selectedCardId = card.id),
-                        onDelete: () => _deleteCard(paymentProvider, card.id),
-                      ),
-                    ),
-
-                  const SizedBox(height: 28),
-
-                  // ── Amount breakdown ─────────────────────────────────────
-                  _SectionHeader(
-                    icon: Icons.calculate_outlined,
-                    title: 'Price Details',
-                  ),
-                  const SizedBox(height: 12),
-                  _PriceBreakdown(order: widget.order),
-
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-
-      // ── Pay button (bottom) ───────────────────────────────────────────────
-      bottomNavigationBar: _PayButton(
-        amount: widget.order.totalAmount,
-        isEnabled: _selectedCardId != null && !_isPaying,
-        isLoading: _isPaying,
-        onPay: _pay,
-      ),
-    );
-  }
-
+  // ─── FIXED: Add card using pure Flutter screen, no native Stripe UI ──────
   Future<void> _addCard(PaymentProvider provider) async {
     final authProvider = context.read<AuthProvider>();
 
@@ -255,11 +168,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
 
-    final success = await provider.addCard();
+    // Navigate to the pure Flutter AddCardScreen
+    final added = await AddCardScreen.show(context);
     if (!mounted) return;
 
-    if (success) {
-      setState(() => _selectedCardId = provider.defaultCardId);
+    if (added == true) {
+      // Reload cards and select the new one (new card becomes default in provider)
+      await provider.loadCards();
+      setState(() {
+        _selectedCardId = provider.defaultCardId;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Row(
@@ -281,8 +199,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      provider.clearError();
     }
-    // null + no error = user cancelled, silent
+    // null + no error = user cancelled, do nothing
   }
 
   Future<void> _deleteCard(PaymentProvider provider, String cardId) async {
@@ -320,15 +239,94 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
   }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    final paymentProvider = context.watch<PaymentProvider>();
+
+    return Scaffold(
+      backgroundColor: AppTheme.primaryBackground,
+      appBar: AppBar(title: const Text('Checkout')),
+      body: paymentProvider.isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.accentBlue),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionHeader(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Order Summary',
+                  ),
+                  const SizedBox(height: 12),
+                  _OrderSummaryCard(order: widget.order),
+                  const SizedBox(height: 28),
+
+                  _SectionHeader(
+                    icon: Icons.credit_card,
+                    title: 'Payment Method',
+                    trailing: paymentProvider.hasCards
+                        ? TextButton.icon(
+                            onPressed: () => _addCard(paymentProvider),
+                            icon: const Icon(
+                              Icons.add,
+                              size: 16,
+                              color: AppTheme.accentBlue,
+                            ),
+                            label: const Text(
+                              'Add Card',
+                              style: TextStyle(color: AppTheme.accentBlue),
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (!paymentProvider.hasCards)
+                    _EmptyCardsWidget(
+                      onAddCard: () => _addCard(paymentProvider),
+                    )
+                  else
+                    ...paymentProvider.cards.map(
+                      (card) => _CardTile(
+                        card: card,
+                        isSelected: _selectedCardId == card.id,
+                        onTap: () => setState(() => _selectedCardId = card.id),
+                        onDelete: () => _deleteCard(paymentProvider, card.id),
+                      ),
+                    ),
+
+                  const SizedBox(height: 28),
+
+                  _SectionHeader(
+                    icon: Icons.calculate_outlined,
+                    title: 'Price Details',
+                  ),
+                  const SizedBox(height: 12),
+                  _PriceBreakdown(order: widget.order),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+      bottomNavigationBar: _PayButton(
+        amount: widget.order.totalAmount,
+        isEnabled: _selectedCardId != null && !_isPaying,
+        isLoading: _isPaying,
+        onPay: _pay,
+      ),
+    );
+  }
 }
 
-// ── Subwidgets ───────────────────────────────────────────────────────────────
+// ── Subwidgets (unchanged from original, kept for completeness) ─────────────
 
 class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget? trailing;
-
   const _SectionHeader({
     required this.icon,
     required this.title,
@@ -369,65 +367,65 @@ class _OrderSummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        children: [
-          ...order.items.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[850],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        item.product.imageUrl,
-                        fit: BoxFit.cover,
+        children: order.items
+            .map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[850],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          item.product.imageUrl,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.product.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.product.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Qty: ${item.quantity}',
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 12,
+                          Text(
+                            'Qty: ${item.quantity}',
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Text(
-                    '\$${item.totalPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                    Text(
+                      '\$${item.totalPrice.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
-        ],
+            )
+            .toList(),
       ),
     );
   }
@@ -438,7 +436,6 @@ class _CardTile extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onDelete;
-
   const _CardTile({
     required this.card,
     required this.isSelected,
@@ -464,7 +461,6 @@ class _CardTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Radio
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 22,
@@ -482,10 +478,8 @@ class _CardTile extends StatelessWidget {
                   : null,
             ),
             const SizedBox(width: 14),
-            // Brand icon
             _brandIcon(card.brand),
             const SizedBox(width: 12),
-            // Card info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,13 +516,12 @@ class _CardTile extends StatelessWidget {
   }
 
   Widget _brandIcon(String brand) {
-    final Map<String, Color> colors = {
+    final colors = {
       'visa': const Color(0xFF1A1F71),
       'mastercard': const Color(0xFFEB001B),
       'amex': const Color(0xFF007BC1),
     };
     final color = colors[brand.toLowerCase()] ?? AppTheme.accentBlue;
-
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -552,10 +545,7 @@ class _EmptyCardsWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.accentBlue.withOpacity(0.3),
-          style: BorderStyle.solid,
-        ),
+        border: Border.all(color: AppTheme.accentBlue.withOpacity(0.3)),
       ),
       child: Column(
         children: [
@@ -599,7 +589,6 @@ class _PriceBreakdown extends StatelessWidget {
     final subtotal = order.totalAmount;
     final tax = subtotal * 0.08;
     final total = subtotal + tax;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -672,7 +661,6 @@ class _PayButton extends StatelessWidget {
   final bool isEnabled;
   final bool isLoading;
   final VoidCallback onPay;
-
   const _PayButton({
     required this.amount,
     required this.isEnabled,
@@ -684,7 +672,6 @@ class _PayButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final tax = amount * 0.08;
     final total = amount + tax;
-
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -755,12 +742,9 @@ class _PayButton extends StatelessWidget {
   }
 }
 
-// ── Success bottom sheet ─────────────────────────────────────────────────────
-
 class _PaymentSuccessSheet extends StatelessWidget {
   final Order order;
   final VoidCallback onDone;
-
   const _PaymentSuccessSheet({required this.order, required this.onDone});
 
   @override
@@ -782,7 +766,6 @@ class _PaymentSuccessSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Animated check
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: 1),
             duration: const Duration(milliseconds: 600),
@@ -829,7 +812,6 @@ class _PaymentSuccessSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
-          // Details strip
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

@@ -72,7 +72,12 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                         topLeft: Radius.circular(16),
                         topRight: Radius.circular(16),
                       ),
-                      child: Image.asset(widget.image, fit: BoxFit.cover),
+                      child: Image.asset(
+                        widget.image,
+                        fit: BoxFit.cover,
+                        cacheHeight: 200,
+                        cacheWidth: 200,
+                      ),
                     ),
 
                     if (widget.onFavorite != null)
