@@ -50,4 +50,36 @@ class Address {
   }
 
   String get shortAddress => '$street, $city, $state $postalCode';
+
+  // ✅ Convert to Map for SharedPreferences
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'label': label,
+      'fullName': fullName,
+      'phone': phone,
+      'street': street,
+      'city': city,
+      'state': state,
+      'postalCode': postalCode,
+      'country': country,
+      'isDefault': isDefault,
+    };
+  }
+
+  // ✅ Factory to create Address from Map (used when loading from storage)
+  factory Address.fromMap(Map<String, dynamic> map) {
+    return Address(
+      id: map['id'],
+      label: map['label'],
+      fullName: map['fullName'],
+      phone: map['phone'],
+      street: map['street'],
+      city: map['city'],
+      state: map['state'],
+      postalCode: map['postalCode'],
+      country: map['country'],
+      isDefault: map['isDefault'] ?? false,
+    );
+  }
 }
