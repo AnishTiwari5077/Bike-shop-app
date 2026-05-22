@@ -7,7 +7,12 @@ class StripeService {
   StripeService._();
   static final StripeService instance = StripeService._();
 
-  // static const String _baseUrl = 'http://10.0.2.2:3000';
+  // ── Change this to match your environment ───────────────────────────────
+  // Android emulator  → 'http://10.0.2.2:3000'
+  // iOS simulator     → 'http://localhost:3000'
+  // Physical device   → 'http://<your-local-IP>:3000'  e.g. 192.168.1.6
+  //static const String _baseUrl = 'http://10.0.2.2:3000';
+
   static const String _baseUrl = 'http://192.168.1.6:3000';
 
   final Map<String, String> _headers = {'Content-Type': 'application/json'};
@@ -18,11 +23,14 @@ class StripeService {
     required String name,
   }) async {
     try {
-      final res = await http.post(
-        Uri.parse('$_baseUrl/create-customer'),
-        headers: _headers,
-        body: jsonEncode({'email': email, 'name': name}),
-      );
+      final res = await http
+          .post(
+            Uri.parse('$_baseUrl/payments/create-customer'),
+            headers: _headers,
+            body: jsonEncode({'email': email, 'name': name}),
+          )
+          .timeout(const Duration(seconds: 10));
+
       final data = jsonDecode(res.body);
       if (res.statusCode == 200) return data['customerId'] as String;
       debugPrint('createCustomer error: ${data['error']}');
@@ -33,7 +41,7 @@ class StripeService {
     }
   }
 
-  // ─── NEW: Create a Stripe token from raw card details (REST API) ─────────
+  // ── Create a Stripe token from raw card details (Stripe REST API) ────────
   Future<String?> createTokenFromCard({
     required String number,
     required int expMonth,
@@ -41,49 +49,52 @@ class StripeService {
     required String cvc,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('https://api.stripe.com/v1/tokens'),
-        headers: {
-          'Authorization': 'Bearer ${Stripe.publishableKey}',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: {
-          'card[number]': number,
-          'card[exp_month]': expMonth.toString(),
-          'card[exp_year]': expYear.toString(),
-          'card[cvc]': cvc,
-        },
-      );
+      final response = await http
+          .post(
+            Uri.parse('https://api.stripe.com/v1/tokens'),
+            headers: {
+              'Authorization': 'Bearer ${Stripe.publishableKey}',
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: {
+              'card[number]': number,
+              'card[exp_month]': expMonth.toString(),
+              'card[exp_year]': expYear.toString(),
+              'card[cvc]': cvc,
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['id'] != null) {
-        debugPrint('✅ Token created: ${data['id']}');
+        debugPrint('✅ Stripe token created: ${data['id']}');
         return data['id'] as String;
-      } else {
-        debugPrint('❌ Stripe token error: ${data['error']['message']}');
-        return null;
       }
+      debugPrint('❌ Stripe token error: ${data['error']['message']}');
+      return null;
     } catch (e) {
       debugPrint('createTokenFromCard exception: $e');
       return null;
     }
   }
 
-  // ─── NEW: Attach a token to a customer using backend /attach-token ───────
+  // ── Attach a token to a customer ─────────────────────────────────────────
   Future<String?> attachTokenToCustomer({
     required String customerId,
     required String tokenId,
   }) async {
     try {
-      final res = await http.post(
-        Uri.parse('$_baseUrl/attach-token'),
-        headers: _headers,
-        body: jsonEncode({'customerId': customerId, 'tokenId': tokenId}),
-      );
+      final res = await http
+          .post(
+            Uri.parse('$_baseUrl/payments/attach-token'),
+            headers: _headers,
+            body: jsonEncode({'customerId': customerId, 'tokenId': tokenId}),
+          )
+          .timeout(const Duration(seconds: 10));
+
       final data = jsonDecode(res.body);
       if (res.statusCode == 200 && data['paymentMethodId'] != null) {
-        debugPrint(
-          '✅ Token attached, paymentMethodId: ${data['paymentMethodId']}',
-        );
+        debugPrint('✅ Token attached → PM: ${data['paymentMethodId']}');
         return data['paymentMethodId'] as String;
       }
       debugPrint('❌ attachTokenToCustomer error: ${data['error']}');
@@ -94,25 +105,25 @@ class StripeService {
     }
   }
 
-  // ── Add a new card via CardField (deprecated – kept for compatibility) ──
+  // ── Attach PaymentMethod directly (CardField flow, kept for compat) ──────
   Future<String?> attachCardToCustomer({
     required String customerId,
     required String paymentMethodId,
   }) async {
     try {
-      final res = await http.post(
-        Uri.parse('$_baseUrl/attach-payment-method'),
-        headers: _headers,
-        body: jsonEncode({
-          'customerId': customerId,
-          'paymentMethodId': paymentMethodId,
-        }),
-      );
+      final res = await http
+          .post(
+            Uri.parse('$_baseUrl/payments/attach-payment-method'),
+            headers: _headers,
+            body: jsonEncode({
+              'customerId': customerId,
+              'paymentMethodId': paymentMethodId,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
       final data = jsonDecode(res.body);
-      if (res.statusCode == 200) {
-        debugPrint('attachCardToCustomer success: $paymentMethodId');
-        return paymentMethodId;
-      }
+      if (res.statusCode == 200) return paymentMethodId;
       debugPrint('attachCardToCustomer error: ${data['error']}');
       return null;
     } catch (e) {
@@ -121,13 +132,16 @@ class StripeService {
     }
   }
 
-  // ── List saved cards for a customer ─────────────────────────────────────
+  // ── List saved cards ──────────────────────────────────────────────────────
   Future<List<StripeCard>> listCards({required String customerId}) async {
     try {
-      final res = await http.get(
-        Uri.parse('$_baseUrl/payment-methods/$customerId'),
-        headers: _headers,
-      );
+      final res = await http
+          .get(
+            Uri.parse('$_baseUrl/payments/payment-methods/$customerId'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
+
       final data = jsonDecode(res.body);
       if (res.statusCode == 200) {
         return (data['cards'] as List)
@@ -141,13 +155,15 @@ class StripeService {
     }
   }
 
-  // ── Delete a saved card ──────────────────────────────────────────────────
+  // ── Delete a saved card ───────────────────────────────────────────────────
   Future<bool> deleteCard({required String paymentMethodId}) async {
     try {
-      final res = await http.delete(
-        Uri.parse('$_baseUrl/payment-methods/$paymentMethodId'),
-        headers: _headers,
-      );
+      final res = await http
+          .delete(
+            Uri.parse('$_baseUrl/payments/payment-methods/$paymentMethodId'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
       return res.statusCode == 200;
     } catch (e) {
       debugPrint('deleteCard exception: $e');
@@ -155,7 +171,7 @@ class StripeService {
     }
   }
 
-  // ── Pay for an order ─────────────────────────────────────────────────────
+  // ── Pay for an order ──────────────────────────────────────────────────────
   Future<PaymentResult> payForOrder({
     required double amount,
     required String customerId,
@@ -164,17 +180,19 @@ class StripeService {
     String currency = 'usd',
   }) async {
     try {
-      final res = await http.post(
-        Uri.parse('$_baseUrl/create-payment-intent'),
-        headers: _headers,
-        body: jsonEncode({
-          'amount': amount,
-          'currency': currency,
-          'customerId': customerId,
-          'paymentMethodId': paymentMethodId,
-          'orderId': orderId,
-        }),
-      );
+      final res = await http
+          .post(
+            Uri.parse('$_baseUrl/payments/create-payment-intent'),
+            headers: _headers,
+            body: jsonEncode({
+              'amount': amount,
+              'currency': currency,
+              'customerId': customerId,
+              'paymentMethodId': paymentMethodId,
+              'orderId': orderId,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(res.body);
       if (res.statusCode != 200) {
@@ -183,7 +201,7 @@ class StripeService {
 
       final clientSecret = data['clientSecret'] as String;
 
-      // Confirm payment — no sheet opened, handles 3DS automatically
+      // Confirm payment — no sheet, handles 3DS automatically
       await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: clientSecret,
         data: PaymentMethodParams.cardFromMethodId(
@@ -196,7 +214,7 @@ class StripeService {
       return PaymentResult.success();
     } on StripeException catch (e) {
       final msg = e.error.localizedMessage ?? 'Payment failed';
-      debugPrint('StripeException (pay): $msg');
+      debugPrint('StripeException: $msg');
       return PaymentResult.failure(msg);
     } catch (e) {
       debugPrint('payForOrder exception: $e');
@@ -205,7 +223,7 @@ class StripeService {
   }
 }
 
-// ── Data models ─────────────────────────────────────────────────────────────
+// ── Data models ───────────────────────────────────────────────────────────────
 
 class StripeCard {
   final String id;

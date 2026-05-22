@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:firebase_core/firebase_core.dart';
+//import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -117,13 +117,13 @@ class NotificationService {
   }) async {
     debugPrint('📧 ===== SENDING EMAIL =====');
     debugPrint('   To: $email');
-    debugPrint('   URL: $_baseUrl/send-payment-email');
+    debugPrint('   URL: $_baseUrl/email/send-payment-email');
     debugPrint('   Order: $orderId');
     debugPrint('   Amount: $amount');
 
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/send-payment-email'),
+        Uri.parse('$_baseUrl/email/send-payment-email'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': email,
