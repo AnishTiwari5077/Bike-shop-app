@@ -1,5 +1,5 @@
 import 'dart:convert';
-//import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -13,16 +13,15 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
-  static const String _baseUrl = 'http://10.0.2.2:3000';
+  // ⚠️ IMPORTANT: Change this to your computer's actual local IP address
+  // (run `ipconfig` on Windows or `ifconfig` on Mac/Linux)
+  static const String _baseUrl = 'http://192.168.1.6:3000';
 
-  // ─── Initialization ──────────────────────────────────────────────
   Future<void> initialize() async {
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
 
-    const AndroidInitializationSettings
-    androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    ); // only used for the app icon in the notification drawer, not for the small icon
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings();
     const InitializationSettings initSettings = InitializationSettings(
@@ -54,20 +53,18 @@ class NotificationService {
     debugPrint('FCM Token: $token');
   }
 
-  // ─── Local notification helper (ICON REMOVED) ───────────────────
   Future<void> _showLocalNotification({
     required String title,
     required String body,
   }) async {
-    const AndroidNotificationDetails
-    androidDetails = AndroidNotificationDetails(
-      'bike_shop_payments',
-      'Payment Notifications',
-      channelDescription: 'Notifications for payment and order updates',
-      importance: Importance.high,
-      priority: Priority.high,
-      // icon: 'ic_launcher', // <-- REMOVED – causes resource not found error
-    );
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'bike_shop_payments',
+          'Payment Notifications',
+          channelDescription: 'Notifications for payment and order updates',
+          importance: Importance.high,
+          priority: Priority.high,
+        );
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
     const NotificationDetails details = NotificationDetails(
       android: androidDetails,
@@ -83,18 +80,15 @@ class NotificationService {
     );
   }
 
-  // Called when user taps a notification while app is in foreground
   void _onNotificationTap(NotificationResponse response) {
     debugPrint('Notification tapped (foreground): ${response.payload}');
   }
 
-  // Called when user taps a notification while app is in background/terminated
   @pragma('vm:entry-point')
   static void _notificationTapBackground(NotificationResponse response) {
     debugPrint('Notification tapped (background): ${response.payload}');
   }
 
-  // ─── FCM foreground handler ──────────────────────────────────────────
   void _handleForegroundMessage(RemoteMessage message) {
     _showLocalNotification(
       title: message.notification?.title ?? 'Bike Shop',
@@ -102,7 +96,6 @@ class NotificationService {
     );
   }
 
-  // ─── Public methods ──────────────────────────────────────────────
   Future<void> showPaymentSuccessNotification({
     required String orderId,
     required double amount,
@@ -114,6 +107,7 @@ class NotificationService {
     );
   }
 
+  // ─── Email with full logging ─────────────────────────────────────────────
   Future<void> sendPaymentConfirmationEmail({
     required String email,
     required String name,
@@ -121,8 +115,14 @@ class NotificationService {
     required double amount,
     required List<Map<String, dynamic>> items,
   }) async {
+    debugPrint('📧 ===== SENDING EMAIL =====');
+    debugPrint('   To: $email');
+    debugPrint('   URL: $_baseUrl/send-payment-email');
+    debugPrint('   Order: $orderId');
+    debugPrint('   Amount: $amount');
+
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('$_baseUrl/send-payment-email'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -133,8 +133,17 @@ class NotificationService {
           'items': items,
         }),
       );
+      debugPrint('📧 Response status: ${response.statusCode}');
+      debugPrint('📧 Response body: ${response.body}');
+      if (response.statusCode == 200) {
+        debugPrint('✅ Email sent successfully!');
+      } else {
+        debugPrint('❌ Email send failed with status ${response.statusCode}');
+      }
     } catch (e) {
-      debugPrint('Email send error: $e');
+      debugPrint('❌ Email send error: $e');
+      debugPrint('   Make sure the backend is running on $_baseUrl');
+      debugPrint('   And your phone is on the same Wi-Fi network');
     }
   }
 }
