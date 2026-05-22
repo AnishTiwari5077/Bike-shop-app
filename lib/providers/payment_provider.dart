@@ -1,18 +1,15 @@
 import 'package:bike_shop/service/stripe_service.dart';
-
 import 'package:flutter/material.dart';
 
-/// Manages the user's Stripe customer ID and their saved cards.
-/// Fetches real cards from Stripe via the backend.
 class PaymentProvider with ChangeNotifier {
-  // ── State ────────────────────────────────────────────────────────────────
-  String? _stripeCustomerId; // Persisted in SharedPreferences in production
+  String? _stripeCustomerId;
   List<StripeCard> _cards = [];
   String? _defaultCardId;
   bool _isLoading = false;
+  bool _isAddingCard = false; // ← prevents reset during active sheet
   String? _error;
+  bool _initialized = false;
 
-  // ── Getters ──────────────────────────────────────────────────────────────
   String? get stripeCustomerId => _stripeCustomerId;
   List<StripeCard> get cards => [..._cards];
   String? get defaultCardId => _defaultCardId;
@@ -25,113 +22,173 @@ class PaymentProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasCards => _cards.isNotEmpty;
+  bool get isInitialized => _initialized;
+  bool get isAddingCard => _isAddingCard;
 
-  // ── Initialize (call once after user logs in) ────────────────────────────
-  /// Creates a Stripe customer for the user if one doesn't exist yet.
-  /// In production, store customerId in your database and restore it here.
   Future<void> initialize({required String email, required String name}) async {
-    // In production: load customerId from SharedPreferences / your backend
-    // For now we create a fresh one each session (dev only)
     if (_stripeCustomerId != null) {
+      _initialized = true;
       await loadCards();
       return;
     }
 
     _setLoading(true);
-    final customerId = await StripeService.instance.createCustomer(
-      email: email,
-      name: name,
-    );
+    _error = null;
 
-    if (customerId != null) {
-      _stripeCustomerId = customerId;
-      await loadCards();
-    } else {
-      _error = 'Could not connect to payment service.';
+    try {
+      debugPrint('PaymentProvider: creating customer for $email');
+      final customerId = await StripeService.instance.createCustomer(
+        email: email,
+        name: name,
+      );
+
+      if (customerId != null) {
+        _stripeCustomerId = customerId;
+        _initialized = true;
+        debugPrint('PaymentProvider: customer created → $customerId');
+        await loadCards();
+      } else {
+        _error = 'Could not connect to payment service.';
+        debugPrint('PaymentProvider: createCustomer returned null');
+      }
+    } catch (e) {
+      _error = 'Payment service error: $e';
+      debugPrint('PaymentProvider initialize error: $e');
+    } finally {
+      _setLoading(false);
     }
-    _setLoading(false);
   }
 
-  // ── Load cards from Stripe ───────────────────────────────────────────────
   Future<void> loadCards() async {
     if (_stripeCustomerId == null) return;
     _setLoading(true);
     _error = null;
 
-    _cards = await StripeService.instance.listCards(
-      customerId: _stripeCustomerId!,
-    );
-
-    if (_cards.isNotEmpty && _defaultCardId == null) {
-      _defaultCardId = _cards.first.id;
+    try {
+      _cards = await StripeService.instance.listCards(
+        customerId: _stripeCustomerId!,
+      );
+      debugPrint('PaymentProvider: loaded ${_cards.length} cards');
+      if (_cards.isNotEmpty && _defaultCardId == null) {
+        _defaultCardId = _cards.first.id;
+      }
+    } catch (e) {
+      debugPrint('PaymentProvider loadCards error: $e');
+    } finally {
+      _setLoading(false);
     }
-
-    _setLoading(false);
   }
 
-  // ── Add a new card ───────────────────────────────────────────────────────
   Future<bool> addCard() async {
-    if (_stripeCustomerId == null) return false;
+    if (_stripeCustomerId == null) {
+      _error = 'Payment service not initialized.';
+      notifyListeners();
+      return false;
+    }
+
+    _isAddingCard = true;
     _setLoading(true);
 
-    final paymentMethodId = await StripeService.instance.addCard(
-      customerId: _stripeCustomerId!,
-    );
+    // Capture customerId locally — safe even if reset() is called
+    final customerId = _stripeCustomerId!;
 
-    if (paymentMethodId != null) {
-      await loadCards(); // Refresh list from Stripe
-      _defaultCardId ??= paymentMethodId;
-      _setLoading(false);
-      return true;
-    }
+    try {
+      debugPrint('PaymentProvider: opening Stripe card sheet');
+      final paymentMethodId = await StripeService.instance.addCard(
+        customerId: customerId,
+      );
 
-    _setLoading(false);
-    return false;
-  }
-
-  // ── Delete a card ────────────────────────────────────────────────────────
-  Future<bool> deleteCard(String paymentMethodId) async {
-    final success = await StripeService.instance.deleteCard(
-      paymentMethodId: paymentMethodId,
-    );
-
-    if (success) {
-      _cards.removeWhere((c) => c.id == paymentMethodId);
-      if (_defaultCardId == paymentMethodId) {
-        _defaultCardId = _cards.isNotEmpty ? _cards.first.id : null;
+      // If reset was called while sheet was open, abort silently
+      if (_stripeCustomerId == null) {
+        debugPrint('PaymentProvider: reset during addCard — aborting');
+        return false;
       }
-      notifyListeners();
+
+      if (paymentMethodId != null) {
+        debugPrint('PaymentProvider: card added → $paymentMethodId');
+        await loadCards();
+        _defaultCardId ??= paymentMethodId;
+        return true;
+      }
+
+      debugPrint('PaymentProvider: addCard cancelled or failed');
+      return false;
+    } catch (e) {
+      debugPrint('PaymentProvider addCard error: $e');
+      return false;
+    } finally {
+      _isAddingCard = false;
+      _setLoading(false);
     }
-    return success;
   }
 
-  // ── Set default card ─────────────────────────────────────────────────────
+  Future<bool> deleteCard(String paymentMethodId) async {
+    try {
+      final success = await StripeService.instance.deleteCard(
+        paymentMethodId: paymentMethodId,
+      );
+      if (success) {
+        _cards.removeWhere((c) => c.id == paymentMethodId);
+        if (_defaultCardId == paymentMethodId) {
+          _defaultCardId = _cards.isNotEmpty ? _cards.first.id : null;
+        }
+        notifyListeners();
+      }
+      return success;
+    } catch (e) {
+      debugPrint('PaymentProvider deleteCard error: $e');
+      return false;
+    }
+  }
+
   void setDefaultCard(String paymentMethodId) {
     _defaultCardId = paymentMethodId;
     notifyListeners();
   }
 
-  // ── Pay for an order ─────────────────────────────────────────────────────
   Future<PaymentResult> payForOrder({
     required double amount,
     required String orderId,
-    String? paymentMethodId, // uses default if null
+    String? paymentMethodId,
   }) async {
     final pmId = paymentMethodId ?? _defaultCardId;
-
-    if (_stripeCustomerId == null || pmId == null) {
+    if (_stripeCustomerId == null) {
+      return PaymentResult.failure('Payment service not initialized.');
+    }
+    if (pmId == null) {
       return PaymentResult.failure('No payment method selected.');
     }
-
-    return StripeService.instance.payForOrder(
-      amount: amount,
-      customerId: _stripeCustomerId!,
-      paymentMethodId: pmId,
-      orderId: orderId,
-    );
+    try {
+      return await StripeService.instance.payForOrder(
+        amount: amount,
+        customerId: _stripeCustomerId!,
+        paymentMethodId: pmId,
+        orderId: orderId,
+      );
+    } catch (e) {
+      debugPrint('PaymentProvider payForOrder error: $e');
+      return PaymentResult.failure('Unexpected error. Please try again.');
+    }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // Safe reset — waits if card sheet is open
+  void reset() {
+    if (_isAddingCard) {
+      debugPrint('PaymentProvider: reset deferred — card sheet is open');
+      // Just clear the customer so addCard aborts gracefully after sheet closes
+      _stripeCustomerId = null;
+      _initialized = false;
+      return;
+    }
+    _stripeCustomerId = null;
+    _cards = [];
+    _defaultCardId = null;
+    _isLoading = false;
+    _error = null;
+    _initialized = false;
+    notifyListeners();
+  }
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
