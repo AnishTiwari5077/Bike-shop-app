@@ -215,13 +215,74 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _addCard(PaymentProvider provider) async {
-    final success = await provider.addCard();
-    if (mounted && success) {
-      setState(() => _selectedCardId = provider.defaultCardId);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Card added successfully!')));
+    final authProvider = context.read<AuthProvider>();
+
+    // Check sign-in first
+    if (!authProvider.isSignedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.person_outline, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text('Please sign in first to add a card.'),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
     }
+
+    // Auto-initialize if needed
+    if (!provider.isInitialized) {
+      await provider.initialize(
+        email: authProvider.email,
+        name: authProvider.displayName,
+      );
+      if (!mounted) return;
+
+      if (!provider.isInitialized) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not connect to payment service.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+    }
+
+    final success = await provider.addCard();
+    if (!mounted) return;
+
+    if (success) {
+      setState(() => _selectedCardId = provider.defaultCardId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text('Card added successfully!'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else if (provider.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(provider.error!),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    // null + no error = user cancelled, silent
   }
 
   Future<void> _deleteCard(PaymentProvider provider, String cardId) async {

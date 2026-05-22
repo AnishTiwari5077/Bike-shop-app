@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:firebase_core/firebase_core.dart';
+//import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -22,9 +22,7 @@ class NotificationService {
 
     // 2. Configure initialization settings for local notifications
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings(
-          '@mipmap/ic_launcher',
-        ); // was 'ic_launcher'// no '@mipmap/'
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings();
     const InitializationSettings initSettings = InitializationSettings(
@@ -35,7 +33,6 @@ class NotificationService {
     // 3. Initialize the plugin with required 'settings' argument
     await _localNotifications.initialize(
       settings: initSettings,
-
       onDidReceiveNotificationResponse: _onNotificationTap,
       onDidReceiveBackgroundNotificationResponse: _notificationTapBackground,
     );
@@ -81,10 +78,9 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // Generate a unique id (milliseconds since epoch)
     final int id = DateTime.now().millisecondsSinceEpoch.remainder(1000000);
     await _localNotifications.show(
-      id: id, // 'id' is a named parameter
+      id: id,
       title: title,
       body: body,
       notificationDetails: details,
@@ -147,14 +143,4 @@ class NotificationService {
       debugPrint('Email send error: $e');
     }
   }
-}
-
-// ─── Top‑level FCM background handler (required for terminated state) ──
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Important: Firebase must be re‑initialized in the background isolate
-  await Firebase.initializeApp();
-  // Re‑initialize notification service (minimal setup)
-  await NotificationService.instance.initialize();
-  debugPrint('Background FCM message: ${message.messageId}');
 }

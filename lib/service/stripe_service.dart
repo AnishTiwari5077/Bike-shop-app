@@ -14,7 +14,8 @@ class StripeService {
   // For local development: 'http://10.0.2.2:3000'  (Android emulator)
   //                        'http://localhost:3000'  (iOS simulator)
   // For production: 'https://your-backend.com'
-  static const String _baseUrl = 'http://10.0.2.2:3000';
+  // static const String _baseUrl = 'http://10.0.2.2:3000';
+  static const String _baseUrl = 'http://192.168.1.6:3000';
 
   final Map<String, String> _headers = {'Content-Type': 'application/json'};
 

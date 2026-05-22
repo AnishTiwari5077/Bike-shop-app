@@ -1,3 +1,4 @@
+import 'package:bike_shop/providers/auth_provider.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/providers/payment_provider.dart';
 import 'package:bike_shop/service/stripe_service.dart';
@@ -69,26 +70,92 @@ class PaymentMethodsScreen extends StatelessWidget {
   }
 
   Future<void> _addCard(BuildContext context, PaymentProvider provider) async {
+    final authProvider = context.read<AuthProvider>();
+
+    // ── Bug 1 & 2 fix: check sign-in FIRST ──────────────────────────────
+    if (!authProvider.isSignedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.person_outline, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text('Please sign in first to add a card.'),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // ── Auto-initialize if needed (signed in but not yet initialized) ────
+    if (!provider.isInitialized) {
+      await provider.initialize(
+        email: authProvider.email,
+        name: authProvider.displayName,
+      );
+      if (!context.mounted) return;
+
+      if (!provider.isInitialized) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not connect to payment service. Check your connection.',
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+    }
+
     final success = await provider.addCard();
-    if (context.mounted) {
+    if (!context.mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text('Card added successfully'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else if (provider.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            success ? 'Card added successfully' : 'Failed to add card',
-          ),
+          content: Text(provider.error!),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
+    // null + no error = user cancelled sheet → silent
   }
 
   Widget _buildError(String message) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Text(
-          message,
-          style: const TextStyle(color: Colors.red, fontSize: 16),
-          textAlign: TextAlign.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: const TextStyle(color: Colors.red, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
@@ -174,7 +241,7 @@ class PaymentMethodsScreen extends StatelessWidget {
   }
 }
 
-// ── Stripe Card Tile ──────────────────────────────────────────────────────────
+// ── Rest of widgets unchanged ────────────────────────────────────────────────
 
 class _StripeCardTile extends StatelessWidget {
   final StripeCard card;
@@ -214,7 +281,7 @@ class _StripeCardTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${card.brand} •••• ${card.last4}',
+                        card.displayName,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
@@ -222,7 +289,7 @@ class _StripeCardTile extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Expires ${card.expMonth.toString().padLeft(2, '0')}/${card.expYear}',
+                        'Expires ${card.expiry}',
                         style: const TextStyle(
                           color: Colors.white54,
                           fontSize: 13,
@@ -320,8 +387,6 @@ class _StripeCardTile extends StatelessWidget {
     }
   }
 }
-
-// ── Shared widgets ────────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String text;
