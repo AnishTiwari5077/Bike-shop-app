@@ -1,0 +1,28 @@
+class Category {
+  final String id;
+  final String name;
+  final String slug;
+  final String icon;
+  final String color;
+  final int order;
+
+  Category({
+    required this.id,
+    required this.name,
+    required this.slug,
+    required this.icon,
+    required this.color,
+    required this.order,
+  });
+
+  factory Category.fromMap(Map<String, dynamic> map) {
+    return Category(
+      id: map['_id'] ?? map['id'] ?? '',
+      name: map['name'] ?? '',
+      slug: map['slug'] ?? '',
+      icon: map['icon'] ?? 'category',
+      color: map['color'] ?? '#3B82F6',
+      order: map['order'] ?? 0,
+    );
+  }
+}
