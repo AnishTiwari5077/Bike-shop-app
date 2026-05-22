@@ -1,7 +1,9 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/providers/cart_provider.dart';
+import 'package:bike_shop/providers/category_provider.dart';
 import 'package:bike_shop/providers/product_provider.dart';
+import 'package:bike_shop/screens/category_product_screen.dart';
 import 'package:bike_shop/screens/product_details_screen.dart';
 import 'package:bike_shop/widgets/search_model.dart';
 import 'package:flutter/material.dart';
@@ -62,55 +64,41 @@ class _ExploreScreenState extends State<ExploreScreen>
   }
 }
 
+//import 'package:bike_shop/providers/category_provider.dart';
+
 class CategoriesTab extends StatelessWidget {
   const CategoriesTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final categories = [
-      {
-        'name': 'Road Bikes',
-        'icon': Icons.two_wheeler,
-        'color': const Color(0xFFF59E0B),
-        'count': 24,
-      },
-      {
-        'name': 'Mountain Bikes',
-        'icon': Icons.pedal_bike,
-        'color': const Color(0xFF10B981),
-        'count': 18,
-      },
-      {
-        'name': 'Electric Bikes',
-        'icon': Icons.electric_bike,
-        'color': const Color(0xFF8B5CF6),
-        'count': 12,
-      },
-      {
-        'name': 'Helmets',
-        'icon': Icons.sports_motorsports,
-        'color': const Color(0xFF3B82F6),
-        'count': 36,
-      },
-      {
-        'name': 'Accessories',
-        'icon': Icons.settings,
-        'color': const Color(0xFFEC4899),
-        'count': 48,
-      },
-      {
-        'name': 'Parts',
-        'icon': Icons.build,
-        'color': const Color(0xFF06B6D4),
-        'count': 52,
-      },
-    ];
+    final categoryProvider = context.watch<CategoryProvider>();
+    final productsProvider = context.watch<ProductsProvider>();
+
+    if (categoryProvider.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppTheme.accentBlue),
+      );
+    }
+    if (categoryProvider.categories.isEmpty) {
+      return const Center(
+        child: Text(
+          'No categories found',
+          style: TextStyle(color: Colors.white54),
+        ),
+      );
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: categories.length,
+      itemCount: categoryProvider.categories.length,
       itemBuilder: (context, index) {
-        final category = categories[index];
+        final cat = categoryProvider.categories[index];
+        final productCount = productsProvider.products
+            .where((p) => p.category == cat.slug)
+            .length;
+        final iconData = _getIconData(cat.icon);
+        final color = _getColorFromHex(cat.color);
+
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
@@ -124,21 +112,16 @@ class CategoriesTab extends StatelessWidget {
               height: 60,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    category['color'] as Color,
-                    (category['color'] as Color).withValues(alpha: .6),
-                  ],
+                  colors: [color, color.withOpacity(0.6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                category['icon'] as IconData,
-                color: Colors.white,
-                size: 30,
-              ),
+              child: Icon(iconData, color: Colors.white, size: 30),
             ),
             title: Text(
-              category['name'] as String,
+              cat.name,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -146,7 +129,7 @@ class CategoriesTab extends StatelessWidget {
               ),
             ),
             subtitle: Text(
-              '${category['count']} products',
+              '$productCount products',
               style: const TextStyle(color: Colors.white54, fontSize: 13),
             ),
             trailing: const Icon(
@@ -155,15 +138,47 @@ class CategoriesTab extends StatelessWidget {
               size: 16,
             ),
             onTap: () {
-              // Navigate to category products
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${category['name']} category')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CategoryProductsScreen(
+                    categorySlug: cat.slug,
+                    categoryName: cat.name,
+                  ),
+                ),
               );
             },
           ),
         );
       },
     );
+  }
+
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'two_wheeler':
+        return Icons.two_wheeler;
+      case 'pedal_bike':
+        return Icons.pedal_bike;
+      case 'electric_bike':
+        return Icons.electric_bike;
+      case 'sports_motorsports':
+        return Icons.sports_motorsports;
+      case 'settings':
+        return Icons.settings;
+      case 'build':
+        return Icons.build;
+      default:
+        return Icons.category;
+    }
+  }
+
+  Color _getColorFromHex(String hexColor) {
+    hexColor = hexColor.replaceAll('#', '');
+    if (hexColor.length == 6) {
+      return Color(int.parse('0xFF$hexColor'));
+    }
+    return AppTheme.accentBlue;
   }
 }
 
