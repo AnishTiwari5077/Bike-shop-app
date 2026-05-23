@@ -1,6 +1,6 @@
-import 'package:bike_shop/service/stripe_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../service/stripe_service.dart';
 
 class PaymentProvider with ChangeNotifier {
   String? _stripeCustomerId;
@@ -11,6 +11,22 @@ class PaymentProvider with ChangeNotifier {
   String? _error;
   bool _initialized = false;
 
+  static const String _keyCustomerId = 'stripe_customer_id';
+  static const String _keyDefaultCardId = 'stripe_default_card';
+
+  PaymentProvider() {
+    _loadSavedData().then((_) {
+      // If we have a customer ID, automatically load cards (no need to wait for initialize)
+      if (_stripeCustomerId != null) {
+        _initialized = true;
+        loadCards();
+      }
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Getters
+  // ──────────────────────────────────────────────────────────────────────────
   String? get stripeCustomerId => _stripeCustomerId;
   List<StripeCard> get cards => [..._cards];
   String? get defaultCardId => _defaultCardId;
@@ -26,10 +42,48 @@ class PaymentProvider with ChangeNotifier {
   bool get isInitialized => _initialized;
   bool get isAddingCard => _isAddingCard;
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Persistence (only customer ID + default card ID)
+  // ──────────────────────────────────────────────────────────────────────────
+  Future<void> _loadSavedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    _stripeCustomerId = prefs.getString(_keyCustomerId);
+    _defaultCardId = prefs.getString(_keyDefaultCardId);
+    if (_stripeCustomerId != null) {
+      debugPrint('✅ Loaded saved customer ID: $_stripeCustomerId');
+    }
+    notifyListeners();
+  }
+
+  Future<void> _saveCustomerId() async {
+    if (_stripeCustomerId == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyCustomerId, _stripeCustomerId!);
+  }
+
+  Future<void> _saveDefaultCardId() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_defaultCardId != null) {
+      await prefs.setString(_keyDefaultCardId, _defaultCardId!);
+    } else {
+      await prefs.remove(_keyDefaultCardId);
+    }
+  }
+
+  Future<void> _clearSavedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyCustomerId);
+    await prefs.remove(_keyDefaultCardId);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Initialization (called after login to create customer if needed)
+  // ──────────────────────────────────────────────────────────────────────────
   Future<void> initialize({required String email, required String name}) async {
+    // If we already have a customer ID (from storage), just refresh cards
     if (_stripeCustomerId != null) {
       _initialized = true;
-      await loadCards();
+      await loadCards(); // refresh card list from backend
       return;
     }
 
@@ -37,7 +91,7 @@ class PaymentProvider with ChangeNotifier {
     _error = null;
 
     try {
-      debugPrint('PaymentProvider: creating customer for $email');
+      debugPrint('PaymentProvider: creating Stripe customer for $email');
       final customerId = await StripeService.instance.createCustomer(
         email: email,
         name: name,
@@ -46,20 +100,22 @@ class PaymentProvider with ChangeNotifier {
       if (customerId != null) {
         _stripeCustomerId = customerId;
         _initialized = true;
-        debugPrint('PaymentProvider: customer created → $customerId');
-        await loadCards();
+        await _saveCustomerId();
+        debugPrint('✅ New customer created → $customerId');
+        await loadCards(); // fetch cards (likely empty)
       } else {
         _error = 'Could not connect to payment service.';
-        debugPrint('PaymentProvider: createCustomer returned null');
       }
     } catch (e) {
       _error = 'Payment service error: $e';
-      debugPrint('PaymentProvider initialize error: $e');
     } finally {
       _setLoading(false);
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Load cards from Stripe (always fresh)
+  // ──────────────────────────────────────────────────────────────────────────
   Future<void> loadCards() async {
     if (_stripeCustomerId == null) return;
     _setLoading(true);
@@ -69,21 +125,24 @@ class PaymentProvider with ChangeNotifier {
       _cards = await StripeService.instance.listCards(
         customerId: _stripeCustomerId!,
       );
-      debugPrint('PaymentProvider: loaded ${_cards.length} cards');
+      debugPrint('✅ Loaded ${_cards.length} cards from Stripe');
       if (_cards.isNotEmpty && _defaultCardId == null) {
         _defaultCardId = _cards.first.id;
+        await _saveDefaultCardId();
       }
     } catch (e) {
-      debugPrint('PaymentProvider loadCards error: $e');
+      debugPrint('❌ loadCards error: $e');
     } finally {
       _setLoading(false);
     }
   }
 
-  // ─── NEW: Add card using plain text fields (no native Stripe UI) ─────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // Add card
+  // ──────────────────────────────────────────────────────────────────────────
   Future<bool> addCardWithPlainDetails({
     required String cardNumber,
-    required String expiry, // format "MM/YY"
+    required String expiry,
     required String cvc,
   }) async {
     if (_stripeCustomerId == null) {
@@ -92,7 +151,6 @@ class PaymentProvider with ChangeNotifier {
       return false;
     }
 
-    // Parse expiry
     final expiryParts = expiry.split('/');
     if (expiryParts.length != 2) {
       _error = 'Invalid expiry format. Use MM/YY.';
@@ -107,7 +165,6 @@ class PaymentProvider with ChangeNotifier {
     _error = null;
 
     try {
-      // 1. Create a Stripe token using REST API (no native SDK call)
       final tokenId = await StripeService.instance.createTokenFromCard(
         number: cardNumber.replaceAll(RegExp(r'\s+'), ''),
         expMonth: expMonth,
@@ -115,28 +172,26 @@ class PaymentProvider with ChangeNotifier {
         cvc: cvc,
       );
       if (tokenId == null) {
-        _error = 'Invalid card details. Please check and try again.';
+        _error = 'Invalid card details.';
         return false;
       }
 
-      // 2. Send token to backend to create PaymentMethod and attach to customer
       final paymentMethodId = await StripeService.instance
           .attachTokenToCustomer(
             customerId: _stripeCustomerId!,
             tokenId: tokenId,
           );
       if (paymentMethodId == null) {
-        _error = 'Failed to save card. Please try again.';
+        _error = 'Failed to save card.';
         return false;
       }
 
-      // 3. Reload cards list
-      await loadCards();
+      await loadCards(); // refresh the card list
       _defaultCardId ??= paymentMethodId;
+      await _saveDefaultCardId();
       return true;
     } catch (e) {
       _error = 'Unexpected error: $e';
-      debugPrint('addCardWithPlainDetails error: $e');
       return false;
     } finally {
       _isAddingCard = false;
@@ -144,14 +199,9 @@ class PaymentProvider with ChangeNotifier {
     }
   }
 
-  // ─── Deprecated: keep only if you still use CardField somewhere ─────────
-  Future<bool> addCardWithDetails(CardFieldInputDetails cardDetails) async {
-    // You can keep this for backward compatibility, but better to remove it.
-    _error = 'This method is deprecated. Use addCardWithPlainDetails instead.';
-    notifyListeners();
-    return false;
-  }
-
+  // ──────────────────────────────────────────────────────────────────────────
+  // Delete card
+  // ──────────────────────────────────────────────────────────────────────────
   Future<bool> deleteCard(String paymentMethodId) async {
     try {
       final success = await StripeService.instance.deleteCard(
@@ -161,21 +211,29 @@ class PaymentProvider with ChangeNotifier {
         _cards.removeWhere((c) => c.id == paymentMethodId);
         if (_defaultCardId == paymentMethodId) {
           _defaultCardId = _cards.isNotEmpty ? _cards.first.id : null;
+          await _saveDefaultCardId();
         }
         notifyListeners();
       }
       return success;
     } catch (e) {
-      debugPrint('PaymentProvider deleteCard error: $e');
+      debugPrint('deleteCard error: $e');
       return false;
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Set default card
+  // ──────────────────────────────────────────────────────────────────────────
   void setDefaultCard(String paymentMethodId) {
     _defaultCardId = paymentMethodId;
+    _saveDefaultCardId();
     notifyListeners();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Pay for order
+  // ──────────────────────────────────────────────────────────────────────────
   Future<PaymentResult> payForOrder({
     required double amount,
     required String orderId,
@@ -196,24 +254,21 @@ class PaymentProvider with ChangeNotifier {
         orderId: orderId,
       );
     } catch (e) {
-      debugPrint('PaymentProvider payForOrder error: $e');
       return PaymentResult.failure('Unexpected error. Please try again.');
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Reset (logout)
+  // ──────────────────────────────────────────────────────────────────────────
   void reset() {
-    if (_isAddingCard) {
-      debugPrint('PaymentProvider: reset deferred — card is being added');
-      _stripeCustomerId = null;
-      _initialized = false;
-      return;
-    }
     _stripeCustomerId = null;
     _cards = [];
     _defaultCardId = null;
     _isLoading = false;
     _error = null;
     _initialized = false;
+    _clearSavedData();
     notifyListeners();
   }
 
@@ -226,6 +281,4 @@ class PaymentProvider with ChangeNotifier {
     _isLoading = value;
     notifyListeners();
   }
-
-  String get uniqueId => DateTime.now().millisecondsSinceEpoch.toString();
 }

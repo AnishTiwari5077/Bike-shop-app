@@ -1,16 +1,23 @@
-import 'package:bike_shop/models/cart_items.dart';
-import 'package:bike_shop/models/product_model.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/cart_items.dart';
+import '../models/product_model.dart';
 
 class CartProvider with ChangeNotifier {
   final Map<String, CartItem> _items = {};
+  static const String _storageKey = 'shopping_cart';
+
+  CartProvider() {
+    _loadCart();
+  }
 
   Map<String, CartItem> get items => {..._items};
   List<CartItem> get cartItems => _items.values.toList();
   int get itemCount =>
-      _items.values.fold<int>(0, (sum, item) => sum + item.quantity);
+      _items.values.fold(0, (sum, item) => sum + item.quantity);
   double get totalAmount =>
-      _items.values.fold<double>(0.0, (sum, item) => sum + item.totalPrice);
+      _items.values.fold(0.0, (sum, item) => sum + item.totalPrice);
   bool get isEmpty => _items.isEmpty;
   int get uniqueItemCount => _items.length;
 
@@ -19,40 +26,39 @@ class CartProvider with ChangeNotifier {
 
   void addToCart(Product product, {int quantity = 1}) {
     if (_items.containsKey(product.id)) {
-      final currentQuantity = _items[product.id]!.quantity;
-      final newQuantity = currentQuantity + quantity;
-      if (product.maxStock != null && newQuantity > product.maxStock!) {
-        return;
-      }
-      _items[product.id]!.quantity = newQuantity;
+      final newQty = _items[product.id]!.quantity + quantity;
+      if (product.maxStock != null && newQty > product.maxStock!) return;
+      _items[product.id]!.quantity = newQty;
     } else {
-      if (product.maxStock != null && quantity > product.maxStock!) {
+      if (product.maxStock != null && quantity > product.maxStock!)
         quantity = product.maxStock!;
-      }
       _items[product.id] = CartItem(product: product, quantity: quantity);
     }
+    _saveCart();
     notifyListeners();
   }
 
   void removeFromCart(String productId) {
     _items.remove(productId);
+    _saveCart();
     notifyListeners();
   }
 
   void increaseQuantity(String productId) {
-    if (_items.containsKey(productId)) {
-      final cartItem = _items[productId]!;
-      if (cartItem.canIncreaseQuantity()) {
-        cartItem.quantity++;
-        notifyListeners();
-      }
+    final item = _items[productId];
+    if (item != null && item.canIncreaseQuantity()) {
+      item.quantity++;
+      _saveCart();
+      notifyListeners();
     }
   }
 
   void decreaseQuantity(String productId) {
-    if (_items.containsKey(productId)) {
-      if (_items[productId]!.quantity > 1) {
-        _items[productId]!.quantity--;
+    final item = _items[productId];
+    if (item != null) {
+      if (item.quantity > 1) {
+        item.quantity--;
+        _saveCart();
         notifyListeners();
       } else {
         removeFromCart(productId);
@@ -61,15 +67,15 @@ class CartProvider with ChangeNotifier {
   }
 
   void updateQuantity(String productId, int quantity) {
-    if (_items.containsKey(productId)) {
-      if (quantity <= 0) {
+    final item = _items[productId];
+    if (item != null) {
+      if (quantity <= 0)
         removeFromCart(productId);
-      } else {
-        final product = _items[productId]!.product;
-        if (product.maxStock != null && quantity > product.maxStock!) {
-          quantity = product.maxStock!;
-        }
-        _items[productId]!.quantity = quantity;
+      else {
+        final max = item.product.maxStock;
+        if (max != null && quantity > max) quantity = max;
+        item.quantity = quantity;
+        _saveCart();
         notifyListeners();
       }
     }
@@ -77,27 +83,47 @@ class CartProvider with ChangeNotifier {
 
   void clearCart() {
     _items.clear();
+    _saveCart();
     notifyListeners();
   }
 
   CartItem? getCartItem(String productId) => _items[productId];
 
-  double getDiscount() {
-    if (totalAmount > 100) {
-      return totalAmount * 0.10;
-    }
-    return 0.0;
-  }
-
+  double getDiscount() => totalAmount > 100 ? totalAmount * 0.10 : 0.0;
   double get finalAmount => totalAmount - getDiscount();
 
-  Map<String, dynamic> getCartSummary() {
-    return {
-      'itemCount': itemCount,
-      'uniqueItems': uniqueItemCount,
-      'subtotal': totalAmount,
-      'discount': getDiscount(),
-      'total': finalAmount,
-    };
+  Map<String, dynamic> getCartSummary() => {
+    'itemCount': itemCount,
+    'uniqueItems': uniqueItemCount,
+    'subtotal': totalAmount,
+    'discount': getDiscount(),
+    'total': finalAmount,
+  };
+
+  // ─── SharedPreferences ────────────────────────────────────────────
+  Future<void> _loadCart() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? jsonString = prefs.getString(_storageKey);
+    if (jsonString == null) return;
+    try {
+      final List<dynamic> decoded = jsonDecode(jsonString);
+      for (var map in decoded) {
+        final product = Product.fromMap(map['product']);
+        final quantity = map['quantity'] as int;
+        _items[product.id] = CartItem(product: product, quantity: quantity);
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading cart: $e');
+    }
+  }
+
+  Future<void> _saveCart() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<Map<String, dynamic>> data = [];
+    for (var item in _items.values) {
+      data.add({'product': item.product.toMap(), 'quantity': item.quantity});
+    }
+    await prefs.setString(_storageKey, jsonEncode(data));
   }
 }

@@ -1,8 +1,15 @@
-import 'package:bike_shop/models/order_model.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/order_model.dart';
 
 class OrdersProvider with ChangeNotifier {
   final List<Order> _orders = [];
+  static const String _storageKey = 'orders';
+
+  OrdersProvider() {
+    _loadOrders();
+  }
 
   List<Order> get orders => [..._orders];
 
@@ -17,6 +24,7 @@ class OrdersProvider with ChangeNotifier {
 
   void addOrder(Order order) {
     _orders.insert(0, order);
+    _saveOrders();
     notifyListeners();
   }
 
@@ -40,7 +48,34 @@ class OrdersProvider with ChangeNotifier {
         status: newStatus.toLowerCase().trim(),
         trackingNumber: oldOrder.trackingNumber,
       );
+      _saveOrders();
       notifyListeners();
     }
+  }
+
+  // ─── SharedPreferences persistence ───────────────────────────────────
+  Future<void> _loadOrders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? jsonString = prefs.getString(_storageKey);
+    if (jsonString == null) return;
+    try {
+      final List<dynamic> decoded = jsonDecode(jsonString);
+      _orders.clear();
+      for (var map in decoded) {
+        _orders.add(Order.fromMap(map));
+      }
+      debugPrint('✅ Loaded ${_orders.length} orders');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Error loading orders: $e');
+    }
+  }
+
+  Future<void> _saveOrders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<Map<String, dynamic>> data = _orders
+        .map((o) => o.toMap())
+        .toList();
+    await prefs.setString(_storageKey, jsonEncode(data));
   }
 }
