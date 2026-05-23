@@ -18,18 +18,19 @@ class Order {
     this.trackingNumber,
   });
 
+  /// Converts the order to a Map for saving in SharedPreferences.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'items': items
-          .map(
-            (item) => {
-              'productId': item.product.id,
-              'quantity': item.quantity,
-              'price': item.product.price,
-            },
-          )
-          .toList(),
+      'items': items.map((item) {
+        return {
+          'productId': item.product.id,
+          'title': item.product.title,
+          'imageUrl': item.product.imageUrl,
+          'price': item.product.price,
+          'quantity': item.quantity,
+        };
+      }).toList(),
       'totalAmount': totalAmount,
       'orderDate': orderDate.toIso8601String(),
       'status': status,
@@ -37,27 +38,28 @@ class Order {
     };
   }
 
-  factory Order.fromMap(Map<String, dynamic> map, List<Product> products) {
-    final items = (map['items'] as List).map((itemMap) {
-      final product = products.firstWhere(
-        (p) => p.id == itemMap['productId'],
-        orElse: () => Product(
-          id: itemMap['productId'],
-          title: 'Unknown Product',
-          subtitle: '',
-          description: '',
-          price: itemMap['price'],
-          imageUrl: '',
-          category: 'bike',
-        ),
+  /// Creates an Order from a Map (loaded from SharedPreferences).
+  /// No external product list needed – we reconstruct a minimal Product object.
+  factory Order.fromMap(Map<String, dynamic> map) {
+    final itemsList = (map['items'] as List).map((itemMap) {
+      // Recreate a Product with the stored data (enough for order history)
+      final product = Product(
+        id: itemMap['productId'],
+        title: itemMap['title'] ?? 'Product',
+        subtitle: '', // not stored, but you can add if needed
+        description: '',
+        price: (itemMap['price'] as num).toDouble(),
+        imageUrl: itemMap['imageUrl'] ?? '',
+        category: '',
+        maxStock: null,
       );
-      return CartItem(product: product, quantity: itemMap['quantity']);
+      return CartItem(product: product, quantity: itemMap['quantity'] as int);
     }).toList();
 
     return Order(
       id: map['id'],
-      items: items,
-      totalAmount: map['totalAmount'],
+      items: itemsList,
+      totalAmount: (map['totalAmount'] as num).toDouble(),
       orderDate: DateTime.parse(map['orderDate']),
       status: map['status'].toString().toLowerCase().trim(),
       trackingNumber: map['trackingNumber'],
