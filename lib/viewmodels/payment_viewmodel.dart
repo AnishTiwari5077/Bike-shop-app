@@ -1,8 +1,8 @@
-// lib/providers/payment_provider.dart
+// lib/providers/payment_viewmodel.dart
 // ---------------------------------------------------------------------------
 // PaymentViewModel — migrated from PaymentProvider to MVVM pattern.
 //
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/payment_provider.dart'
+// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/payment_viewmodel.dart'
 //
 // Changes from original:
 //   - Extends BaseViewModel instead of using `with ChangeNotifier`
@@ -31,15 +31,7 @@ class PaymentViewModel extends BaseViewModel {
   static const String _keyCustomerId = 'stripe_customer_id';
   static const String _keyDefaultCardId = 'stripe_default_card';
 
-  PaymentViewModel() {
-    _loadSavedData().then((_) {
-      // If we have a customer ID, automatically load cards
-      if (_stripeCustomerId != null) {
-        _initialized = true;
-        loadCards();
-      }
-    });
-  }
+  PaymentViewModel();
 
   // ── Getters ───────────────────────────────────────────────────────────────
 
@@ -95,14 +87,19 @@ class PaymentViewModel extends BaseViewModel {
   // ── Initialization (called after login to create customer if needed) ──────
 
   Future<void> initialize({required String email, required String name}) async {
-    // If we already have a customer ID (from storage), just refresh cards
-    if (_stripeCustomerId != null) {
-      _initialized = true;
-      await loadCards();
-      return;
-    }
+    if (_initialized) return;
+    _initialized = true;
 
     setLoading();
+
+    await _loadSavedData();
+
+    // If we already have a customer ID (from storage), just refresh cards
+    if (_stripeCustomerId != null) {
+      await loadCards();
+      setSuccess();
+      return;
+    }
 
     try {
       debugPrint('PaymentViewModel: creating Stripe customer for $email');
@@ -113,7 +110,6 @@ class PaymentViewModel extends BaseViewModel {
 
       if (customerId != null) {
         _stripeCustomerId = customerId;
-        _initialized = true;
         await _saveCustomerId();
         debugPrint('✅ New customer created → $customerId');
         await loadCards();

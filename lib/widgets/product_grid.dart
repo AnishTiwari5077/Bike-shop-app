@@ -1,9 +1,8 @@
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/viewmodels/cart_provider.dart';
-import 'package:bike_shop/viewmodels/favorite_provider.dart';
-import 'package:bike_shop/viewmodels/product_provider.dart';
-import 'package:bike_shop/views/cart_screen.dart';
-import 'package:bike_shop/views/product_details_screen.dart';
+import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
+import 'package:bike_shop/viewmodels/favorites_viewmodel.dart';
+import 'package:bike_shop/viewmodels/product_viewmodel.dart';
+import 'package:go_router/go_router.dart';
 import 'package:bike_shop/widgets/grid_view_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +15,7 @@ class ProductGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final productsProvider = context.watch<ProductsProvider>();
     final cartProvider = context.watch<CartProvider>();
-    final favoritesProvider = context.watch<FavoritesProvider>();
+    final favoritesProvider = context.watch<FavoritesViewModel>();
     final products = productsProvider.displayedProducts;
 
     if (productsProvider.isLoading) {
@@ -94,12 +93,7 @@ class ProductGrid extends StatelessWidget {
             rating: product.rating,
             isFavorite: favoritesProvider.isFavorite(product.id),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ProductDetailScreen(product: product),
-                ),
-              );
+              context.push('/product', extra: product);
             },
             onAddToCart: () {
               cartProvider.addToCart(product);
@@ -110,10 +104,7 @@ class ProductGrid extends StatelessWidget {
                   action: SnackBarAction(
                     label: 'VIEW',
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const CartScreen()),
-                      );
+                      context.push('/cart');
                     },
                   ),
                 ),

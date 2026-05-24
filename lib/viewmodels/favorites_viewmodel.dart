@@ -1,8 +1,8 @@
-// lib/providers/favorite_provider.dart
+// lib/providers/favorites_viewmodel.dart
 // ---------------------------------------------------------------------------
-// FavoritesViewModel — migrated from FavoritesProvider to MVVM pattern.
+// FavoritesViewModel — migrated from FavoritesViewModel to MVVM pattern.
 //
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/favorite_provider.dart'
+// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/favorites_viewmodel.dart'
 //
 // Changes from original:
 //   - Extends BaseViewModel instead of using `with ChangeNotifier`
@@ -18,7 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// ViewModel managing the user's wishlist/favorites.
 ///
 /// Persists favorite product IDs in SharedPreferences.
-/// Consumed by WishlistScreen, ProductDetailsScreen, ExploreScreen.
+/// Consumed by WishListScreen, ProductDetailsScreen, ExploreScreen.
 class FavoritesViewModel extends BaseViewModel {
   Set<String> _favoriteIds = {};
   static const String _storageKey = 'favorites';

@@ -1,8 +1,8 @@
-// lib/providers/address_provider.dart
+// lib/providers/address_viewmodel.dart
 // ---------------------------------------------------------------------------
 // AddressViewModel — migrated from AddressProvider to MVVM pattern.
 //
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/address_provider.dart'
+// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/address_viewmodel.dart'
 //
 // Changes from original:
 //   - Extends BaseViewModel instead of using `with ChangeNotifier`

@@ -15,15 +15,16 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    ExploreScreen(),
-    CartScreen(),
-    ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    // Recreate the list here so setState captures the correct context/state
+    final List<Widget> screens = [
+      const HomeScreen(),
+      const ExploreScreen(),
+      CartScreen(onGoHome: () => setState(() => _currentIndex = 0)),
+      const ProfileScreen(),
+    ];
+
     return AdaptiveScaffold(
       currentIndex: _currentIndex,
       onDestinationSelected: (i) => setState(() => _currentIndex = i),
@@ -33,7 +34,7 @@ class _MainScreenState extends State<MainScreen> {
         AdaptiveDestination(icon: Icons.shopping_cart, label: 'Cart'),
         AdaptiveDestination(icon: Icons.person, label: 'Profile'),
       ],
-      body: _screens[_currentIndex],
+      body: screens[_currentIndex],
     );
   }
 }

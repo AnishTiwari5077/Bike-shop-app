@@ -1,7 +1,7 @@
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/address_model.dart';
-import 'package:bike_shop/viewmodels/address_provider.dart';
+import 'package:bike_shop/viewmodels/address_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -194,9 +194,9 @@ class _AddressCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete_outline,
-                    color: Colors.red,
+                    color: colorScheme.onSurface.withValues(alpha: 0.3),
                     size: 20,
                   ),
                   onPressed: onDelete,
@@ -654,7 +654,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                           onPressed: _save,
                           child: Text(
                             isEditing ? 'Save Changes' : 'Add Address',
-                            style: const TextStyle(fontSize: 16),
+                            style: TextStyle(fontSize: 16),
                           ),
                         ),
                       ),

@@ -1,6 +1,6 @@
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/viewmodels/notification_provider.dart';
+import 'package:bike_shop/viewmodels/notification_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

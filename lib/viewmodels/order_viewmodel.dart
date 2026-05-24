@@ -1,8 +1,8 @@
-// lib/providers/order_provider.dart
+// lib/providers/order_viewmodel.dart
 // ---------------------------------------------------------------------------
 // OrderViewModel — migrated from OrdersProvider to MVVM pattern.
 //
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/order_provider.dart'
+// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/order_viewmodel.dart'
 //
 // Changes from original:
 //   - Extends BaseViewModel instead of using `with ChangeNotifier`

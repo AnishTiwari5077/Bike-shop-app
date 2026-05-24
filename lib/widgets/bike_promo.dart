@@ -50,7 +50,7 @@ class BikePromo extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                             color: Colors.white70,
@@ -59,7 +59,7 @@ class BikePromo extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           discount,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 36,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,

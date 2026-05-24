@@ -1,9 +1,9 @@
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
-import 'package:bike_shop/viewmodels/cart_provider.dart';
-import 'package:bike_shop/viewmodels/category_provider.dart';
-import 'package:bike_shop/viewmodels/product_provider.dart';
+import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
+import 'package:bike_shop/viewmodels/category_viewmodel.dart';
+import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:bike_shop/views/category_product_screen.dart';
 import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:bike_shop/widgets/search_model.dart';
@@ -48,8 +48,8 @@ class _ExploreScreenState extends State<ExploreScreen>
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppTheme.accentBlue,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white54,
+          labelColor: Theme.of(context).colorScheme.onSurface,
+          unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
           tabs: const [
             Tab(text: 'Categories'),
             Tab(text: 'Deals'),
@@ -65,7 +65,7 @@ class _ExploreScreenState extends State<ExploreScreen>
   }
 }
 
-//import 'package:bike_shop/viewmodels/category_provider.dart';
+//import 'package:bike_shop/viewmodels/category_viewmodel.dart';
 
 class CategoriesTab extends StatelessWidget {
   const CategoriesTab({super.key});
@@ -81,10 +81,10 @@ class CategoriesTab extends StatelessWidget {
       );
     }
     if (categoryProvider.categories.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No categories found',
-          style: TextStyle(color: Colors.white54),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
         ),
       );
     }
@@ -126,19 +126,19 @@ class CategoriesTab extends StatelessWidget {
             ),
             title: Text(
               cat.name,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
             subtitle: Text(
               '$productCount products',
-              style: const TextStyle(color: Colors.white54, fontSize: 13),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13),
             ),
-            trailing: const Icon(
+            trailing: Icon(
               Icons.arrow_forward_ios,
-              color: Colors.white54,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
               size: 16,
             ),
             onTap: () {
@@ -324,7 +324,7 @@ class DealsTab extends StatelessWidget {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
+                      color: Theme.of(context).cardColor,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
                         topRight: Radius.circular(16),
@@ -346,8 +346,8 @@ class DealsTab extends StatelessWidget {
                     children: [
                       Text(
                         product.title,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 14,
                         ),
                         maxLines: 1,
@@ -358,7 +358,7 @@ class DealsTab extends StatelessWidget {
                         children: [
                           Text(
                             '\$${product.price.toStringAsFixed(2)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppTheme.accentBlue,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -367,8 +367,8 @@ class DealsTab extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             '\$${(product.price * 1.5).toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              color: Colors.white38,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                               fontSize: 12,
                               decoration: TextDecoration.lineThrough,
                             ),
@@ -392,7 +392,7 @@ class DealsTab extends StatelessWidget {
                 ),
                 child: Text(
                   '-$discount%',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -461,7 +461,7 @@ class NewArrivalsTab extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.grey[850],
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ClipRRect(
@@ -495,8 +495,8 @@ class NewArrivalsTab extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       product.title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -506,8 +506,8 @@ class NewArrivalsTab extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       product.subtitle,
-                      style: const TextStyle(
-                        color: Colors.white60,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                       maxLines: 1,
@@ -516,7 +516,7 @@ class NewArrivalsTab extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       '\$${product.price.toStringAsFixed(2)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.accentBlue,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -526,9 +526,9 @@ class NewArrivalsTab extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.add_shopping_cart,
-                  color: Colors.white70,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 onPressed: () {
                   context.read<CartProvider>().addToCart(product);

@@ -1,15 +1,15 @@
+import 'package:bike_shop/config/router.dart';
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/viewmodels/address_provider.dart';
-import 'package:bike_shop/viewmodels/auth_provider.dart';
-import 'package:bike_shop/viewmodels/cart_provider.dart';
-import 'package:bike_shop/viewmodels/category_provider.dart';
+import 'package:bike_shop/viewmodels/address_viewmodel.dart';
+import 'package:bike_shop/viewmodels/auth_viewmodel.dart';
+import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
+import 'package:bike_shop/viewmodels/category_viewmodel.dart';
 import 'package:bike_shop/viewmodels/checkout_viewmodel.dart';
-import 'package:bike_shop/viewmodels/favorite_provider.dart';
-import 'package:bike_shop/viewmodels/notification_provider.dart';
-import 'package:bike_shop/viewmodels/order_provider.dart';
-import 'package:bike_shop/viewmodels/payment_provider.dart';
-import 'package:bike_shop/viewmodels/product_provider.dart';
-import 'package:bike_shop/views/main_screen.dart';
+import 'package:bike_shop/viewmodels/favorites_viewmodel.dart';
+import 'package:bike_shop/viewmodels/notification_viewmodel.dart';
+import 'package:bike_shop/viewmodels/order_viewmodel.dart';
+import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
+import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:bike_shop/services/notification_service.dart';
 import 'package:bike_shop/viewmodels/theme_viewmodel.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -145,7 +145,7 @@ class BikeShopApp extends StatelessWidget {
       // ─── Consumer wraps MaterialApp so ThemeViewModel changes rebuild it ─
       child: Consumer<ThemeViewModel>(
         builder: (context, themeViewModel, _) {
-          return MaterialApp(
+          return MaterialApp.router(
             title: 'Bike Shop',
             debugShowCheckedModeBanner: false,
             // Light theme applied when ThemeMode.light or system prefers light
@@ -154,7 +154,7 @@ class BikeShopApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             // Controlled by ThemeViewModel (persisted via SharedPreferences)
             themeMode: themeViewModel.themeMode,
-            home: const MainScreen(),
+            routerConfig: appRouter,
           );
         },
       ),

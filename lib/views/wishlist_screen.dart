@@ -5,19 +5,19 @@
 
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/models/product_model.dart';
-import 'package:bike_shop/viewmodels/cart_provider.dart';
-import 'package:bike_shop/viewmodels/favorite_provider.dart';
-import 'package:bike_shop/viewmodels/product_provider.dart';
+import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
+import 'package:bike_shop/viewmodels/favorites_viewmodel.dart';
+import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class WishlistScreen extends StatelessWidget {
-  const WishlistScreen({super.key});
+class WishListScreen extends StatelessWidget {
+  const WishListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final favorites = context.watch<FavoritesProvider>();
+    final favorites = context.watch<FavoritesViewModel>();
     final productsProvider = context.watch<ProductsProvider>();
     final cartProvider = context.watch<CartProvider>();
     final colorScheme = Theme.of(context).colorScheme;
@@ -124,7 +124,7 @@ class WishlistScreen extends StatelessWidget {
   Widget _buildWishlistItem(
     BuildContext context,
     Product product,
-    FavoritesProvider favorites,
+    FavoritesViewModel favorites,
     CartProvider cart,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -188,7 +188,7 @@ class WishlistScreen extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       '\$${product.price}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.greenAccent,
                         fontSize: 15,
                         fontWeight: FontWeight.bold,

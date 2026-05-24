@@ -1,6 +1,6 @@
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/viewmodels/product_provider.dart';
+import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:bike_shop/widgets/bike_promo.dart';
 import 'package:bike_shop/widgets/product_grid.dart';
 import 'package:bike_shop/widgets/stepped_row_icon.dart';
@@ -145,7 +145,7 @@ class _HomeContentState extends State<HomeContent> {
           decoration: BoxDecoration(
             color: _currentPromoPage == index
                 ? AppTheme.accentBlue
-                : Colors.white30,
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -175,7 +175,7 @@ class _HomeContentState extends State<HomeContent> {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textTertiary,
                 fontSize: 14,
               ),

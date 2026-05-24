@@ -1,8 +1,8 @@
-// lib/providers/category_provider.dart
+// lib/providers/category_viewmodel.dart
 // ---------------------------------------------------------------------------
 // CategoryViewModel — migrated from CategoryProvider to MVVM pattern.
 //
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/category_provider.dart'
+// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/category_viewmodel.dart'
 //
 // Changes from original:
 //   - Extends BaseViewModel instead of using `with ChangeNotifier`

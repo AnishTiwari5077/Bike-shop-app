@@ -1,7 +1,7 @@
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
-import 'package:bike_shop/viewmodels/order_provider.dart';
+import 'package:bike_shop/viewmodels/order_viewmodel.dart';
 import 'package:bike_shop/views/checkout_screen.dart';
 import 'package:bike_shop/views/order_details_screen.dart';
 import 'package:flutter/material.dart';
@@ -155,7 +155,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                   const Spacer(),
                   Text(
                     '\$${order.totalAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.accentBlue,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -186,13 +186,21 @@ class _OrdersScreenState extends State<OrdersScreen>
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => CheckoutScreen(order: order),
+                        builder: (_) => CheckoutScreen(
+                          order: order,
+                          onPaymentComplete: () => Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const OrdersScreen(),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     icon: const Icon(Icons.lock_outline, size: 16),
                     label: Text(
                       'Pay Now — \$${order.totalAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.accentBlue,

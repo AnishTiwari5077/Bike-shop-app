@@ -1,6 +1,6 @@
 // screens/category_products_screen.dart
 import 'package:bike_shop/config/responsive.dart';
-import 'package:bike_shop/viewmodels/product_provider.dart';
+import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -33,10 +33,10 @@ class CategoryProductsScreen extends StatelessWidget {
         ),
       ),
       body: categoryProducts.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 'No products in this category',
-                style: TextStyle(color: Colors.white54),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
               ),
             )
           : GridView.builder(
@@ -100,10 +100,10 @@ class _CategoryProductCard extends StatelessWidget {
                   fit: BoxFit.cover,
                   width: double.infinity,
                   errorBuilder: (_, __, ___) => Container(
-                    color: Colors.grey[850],
-                    child: const Icon(
+                    color: Theme.of(context).cardColor,
+                    child: Icon(
                       Icons.image_not_supported,
-                      color: Colors.white54,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                     ),
                   ),
                 ),
@@ -117,8 +117,8 @@ class _CategoryProductCard extends StatelessWidget {
                 children: [
                   Text(
                     product.title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -128,7 +128,7 @@ class _CategoryProductCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '\$${product.price.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.accentBlue,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
