@@ -1,13 +1,13 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/viewmodels/auth_provider.dart';
+import 'package:bike_shop/viewmodels/checkout_viewmodel.dart';
 import 'package:bike_shop/viewmodels/notification_provider.dart';
 import 'package:bike_shop/viewmodels/order_provider.dart';
 import 'package:bike_shop/viewmodels/payment_provider.dart';
-import 'package:bike_shop/views/add_card_screen.dart'; // <-- import the new screen
+import 'package:bike_shop/views/add_card_screen.dart';
 import 'package:bike_shop/views/order_screen.dart';
-//import 'package:bike_shop/views/orders_screen.dart';
-import 'package:bike_shop/services/notification_service.dart';
 import 'package:bike_shop/services/stripe_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +22,6 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _selectedCardId;
-  bool _isPaying = false;
 
   @override
   void initState() {
@@ -33,66 +32,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
   }
 
-  // ── Pay ───────────────────────────────────────────────────────────────────
+  // ── Pay — delegates to CheckoutViewModel ─────────────────────────────────
   Future<void> _pay() async {
     if (_selectedCardId == null) {
       _showError('Please select a payment method.');
       return;
     }
 
-    setState(() => _isPaying = true);
-
-    final paymentProvider = context.read<PaymentProvider>();
-    final ordersProvider = context.read<OrdersProvider>();
-    final authProvider = context.read<AuthProvider>();
-
-    final result = await paymentProvider.payForOrder(
-      amount: widget.order.totalAmount,
-      orderId: widget.order.id,
-      paymentMethodId: _selectedCardId,
+    final ok = await context.read<CheckoutViewModel>().processPayment(
+      order: widget.order,
+      paymentMethodId: _selectedCardId!,
+      paymentVM: context.read<PaymentProvider>(),
+      orderVM: context.read<OrdersProvider>(),
+      notificationVM: context.read<NotificationProvider>(),
+      authVM: context.read<AuthProvider>(),
     );
 
     if (!mounted) return;
-    setState(() => _isPaying = false);
-
-    if (result.isSuccess) {
-      ordersProvider.updateOrderStatus(widget.order.id, 'delivered');
-
-      // ─── Add to notification list (persistent) ───
-      final notificationProvider = context.read<NotificationProvider>();
-      notificationProvider.addNotification(
-        'Payment Successful',
-        'Order #${widget.order.id.substring(0, 8)} - \$${(widget.order.totalAmount * 1.08).toStringAsFixed(2)} charged.',
-      );
-
-      // Push notification (popup)
-      await NotificationService.instance.showPaymentSuccessNotification(
-        orderId: widget.order.id,
-        amount: widget.order.totalAmount * 1.08,
-      );
-
-      // Email notification
-      if (authProvider.isSignedIn) {
-        await NotificationService.instance.sendPaymentConfirmationEmail(
-          email: authProvider.email,
-          name: authProvider.displayName,
-          orderId: widget.order.id,
-          amount: widget.order.totalAmount * 1.08,
-          items: widget.order.items
-              .map(
-                (i) => {
-                  'title': i.product.title,
-                  'quantity': i.quantity,
-                  'price': i.totalPrice,
-                },
-              )
-              .toList(),
-        );
-      }
-
+    if (ok) {
       _showSuccessSheet();
     } else {
-      _showError(result.errorMessage ?? 'Payment failed. Please try again.');
+      final err = context.read<CheckoutViewModel>().errorMessage;
+      _showError(err ?? 'Payment failed. Please try again.');
     }
   }
 
@@ -134,7 +95,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // ─── FIXED: Add card using pure Flutter screen, no native Stripe UI ──────
+  // ── Add card using pure Flutter screen ───────────────────────────────────
   Future<void> _addCard(PaymentProvider provider) async {
     final authProvider = context.read<AuthProvider>();
 
@@ -156,24 +117,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    // Auto-initialize if needed
+    // PaymentViewModel is now auto-initialized via ChangeNotifierProxyProvider
+    // in main.dart, so no manual initialize() call is needed here.
     if (!provider.isInitialized) {
-      await provider.initialize(
-        email: authProvider.email,
-        name: authProvider.displayName,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not connect to payment service.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
-      if (!mounted) return;
-
-      if (!provider.isInitialized) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not connect to payment service.'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
+      return;
     }
 
     // Navigate to the pure Flutter AddCardScreen
@@ -252,6 +206,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final paymentProvider = context.watch<PaymentProvider>();
+    final checkoutVM = context.watch<CheckoutViewModel>();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Checkout')),
@@ -259,69 +214,79 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ? const Center(
               child: CircularProgressIndicator(color: AppTheme.accentBlue),
             )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionHeader(
-                    icon: Icons.receipt_long_outlined,
-                    title: 'Order Summary',
+          : Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: Responsive.horizontalPadding(context),
+                    vertical: 16,
                   ),
-                  const SizedBox(height: 12),
-                  _OrderSummaryCard(order: widget.order),
-                  const SizedBox(height: 28),
-
-                  _SectionHeader(
-                    icon: Icons.credit_card,
-                    title: 'Payment Method',
-                    trailing: paymentProvider.hasCards
-                        ? TextButton.icon(
-                            onPressed: () => _addCard(paymentProvider),
-                            icon: const Icon(
-                              Icons.add,
-                              size: 16,
-                              color: AppTheme.accentBlue,
-                            ),
-                            label: const Text(
-                              'Add Card',
-                              style: TextStyle(color: AppTheme.accentBlue),
-                            ),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-
-                  if (!paymentProvider.hasCards)
-                    _EmptyCardsWidget(
-                      onAddCard: () => _addCard(paymentProvider),
-                    )
-                  else
-                    ...paymentProvider.cards.map(
-                      (card) => _CardTile(
-                        card: card,
-                        isSelected: _selectedCardId == card.id,
-                        onTap: () => setState(() => _selectedCardId = card.id),
-                        onDelete: () => _deleteCard(paymentProvider, card.id),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionHeader(
+                        icon: Icons.receipt_long_outlined,
+                        title: 'Order Summary',
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      _OrderSummaryCard(order: widget.order),
+                      const SizedBox(height: 28),
 
-                  const SizedBox(height: 28),
+                      _SectionHeader(
+                        icon: Icons.credit_card,
+                        title: 'Payment Method',
+                        trailing: paymentProvider.hasCards
+                            ? TextButton.icon(
+                                onPressed: () => _addCard(paymentProvider),
+                                icon: const Icon(
+                                  Icons.add,
+                                  size: 16,
+                                  color: AppTheme.accentBlue,
+                                ),
+                                label: const Text(
+                                  'Add Card',
+                                  style: TextStyle(color: AppTheme.accentBlue),
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
 
-                  _SectionHeader(
-                    icon: Icons.calculate_outlined,
-                    title: 'Price Details',
+                      if (!paymentProvider.hasCards)
+                        _EmptyCardsWidget(
+                          onAddCard: () => _addCard(paymentProvider),
+                        )
+                      else
+                        ...paymentProvider.cards.map(
+                          (card) => _CardTile(
+                            card: card,
+                            isSelected: _selectedCardId == card.id,
+                            onTap: () =>
+                                setState(() => _selectedCardId = card.id),
+                            onDelete: () =>
+                                _deleteCard(paymentProvider, card.id),
+                          ),
+                        ),
+
+                      const SizedBox(height: 28),
+
+                      _SectionHeader(
+                        icon: Icons.calculate_outlined,
+                        title: 'Price Details',
+                      ),
+                      const SizedBox(height: 12),
+                      _PriceBreakdown(order: widget.order),
+                      const SizedBox(height: 32),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  _PriceBreakdown(order: widget.order),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
             ),
       bottomNavigationBar: _PayButton(
         amount: widget.order.totalAmount,
-        isEnabled: _selectedCardId != null && !_isPaying,
-        isLoading: _isPaying,
+        isEnabled: _selectedCardId != null && !checkoutVM.isLoading,
+        isLoading: checkoutVM.isLoading,
         onPay: _pay,
       ),
     );

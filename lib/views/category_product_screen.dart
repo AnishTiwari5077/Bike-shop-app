@@ -1,4 +1,5 @@
 // screens/category_products_screen.dart
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/viewmodels/product_provider.dart';
 import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:flutter/material.dart';
@@ -39,12 +40,20 @@ class CategoryProductsScreen extends StatelessWidget {
               ),
             )
           : GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.75, // same as home screen
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+                vertical: 16,
+              ),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: Responsive.gridColumns(context),
+                childAspectRatio: Responsive.value(
+                  context,
+                  mobile: 0.75,
+                  tablet: 0.78,
+                  desktop: 0.80,
+                ),
+                crossAxisSpacing: Responsive.value(context, mobile: 12.0, tablet: 16.0),
+                mainAxisSpacing: Responsive.value(context, mobile: 12.0, tablet: 16.0),
               ),
               itemCount: categoryProducts.length,
               itemBuilder: (context, index) =>

@@ -1,3 +1,4 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/viewmodels/notification_provider.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +65,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             )
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+                vertical: 16,
+              ),
               itemCount: notifications.length,
               itemBuilder: (ctx, index) {
                 final notif = notifications[index];

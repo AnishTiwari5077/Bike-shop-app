@@ -28,8 +28,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     return Scaffold(
       
-      body: CustomScrollView(
-        slivers: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: CustomScrollView(
+            slivers: [
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
@@ -192,6 +195,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
           ),
         ],
+      ),
+        ),
       ),
       bottomNavigationBar: _buildBottomBar(context, cart),
     );

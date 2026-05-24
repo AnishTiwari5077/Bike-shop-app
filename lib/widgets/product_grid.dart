@@ -57,7 +57,9 @@ class ProductGrid extends StatelessWidget {
     final mobileRatio = textScale > 1.1 ? 0.60 : 0.70;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.horizontalPadding(context),
+      ),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),

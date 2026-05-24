@@ -164,8 +164,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
         
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
@@ -389,6 +392,8 @@ class _AddCardScreenState extends State<AddCardScreen> {
               ),
             ],
           ),
+        ),
+      ),
         ),
       ),
     );

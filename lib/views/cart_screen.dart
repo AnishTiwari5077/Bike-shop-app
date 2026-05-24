@@ -1,13 +1,13 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/cart_items.dart';
-import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/viewmodels/cart_provider.dart';
 import 'package:bike_shop/viewmodels/order_provider.dart';
 import 'package:bike_shop/views/home_screen.dart';
 import 'package:bike_shop/views/order_screen.dart';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -17,36 +17,17 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  bool _isProcessingCheckout = false;
-
   Future<void> _processCheckout(BuildContext context) async {
-    final cartProvider = context.read<CartProvider>();
+    final cart = context.read<CartProvider>();
     final ordersProvider = context.read<OrdersProvider>();
 
-    if (cartProvider.isEmpty) return;
+    if (cart.isEmpty) return;
 
-    setState(() => _isProcessingCheckout = true);
-    await Future.delayed(const Duration(seconds: 2));
-
-    // Create a new order from cart items
-    final newOrder = Order(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      items: List.from(cartProvider.cartItems),
-      totalAmount: cartProvider.getCartSummary()['total'],
-      orderDate: DateTime.now(),
-      status: 'pending',
-    );
-
-    // Add to OrdersProvider
+    // CartViewModel.checkout() creates Order, clears cart, sets isLoading
+    final newOrder = await cart.checkout();
     ordersProvider.addOrder(newOrder);
 
-    // Clear the cart
-    cartProvider.clearCart();
-
     if (mounted) {
-      setState(() => _isProcessingCheckout = false);
-
-      // Show confirmation dialog
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -69,7 +50,6 @@ class _CartScreenState extends State<CartScreen> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context); // Close dialog
-                // Navigate to OrdersScreen
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (_) => const OrdersScreen()),
@@ -140,7 +120,10 @@ class _CartScreenState extends State<CartScreen> {
               children: [
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Responsive.horizontalPadding(context),
+                      vertical: 16,
+                    ),
                     itemCount: cart.cartItems.length,
                     itemBuilder: (context, index) {
                       return _buildCartItem(
@@ -386,10 +369,11 @@ class _CartScreenState extends State<CartScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _isProcessingCheckout
+                  // Use CartViewModel.isLoading — no local bool needed
+                  onPressed: cart.isLoading
                       ? null
                       : () => _processCheckout(context),
-                  child: _isProcessingCheckout
+                  child: cart.isLoading
                       ? const SizedBox(
                           height: 24,
                           width: 24,

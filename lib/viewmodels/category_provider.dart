@@ -7,15 +7,12 @@
 // Changes from original:
 //   - Extends BaseViewModel instead of using `with ChangeNotifier`
 //   - Uses setLoading()/setSuccess()/setError() from base class
-//   - HTTP logic and category model parsing preserved exactly
+//   - HTTP calls moved to CategoryService (Phase 1 MVVM migration)
 // ---------------------------------------------------------------------------
 
-import 'dart:convert';
 import 'package:bike_shop/core/base_viewmodel.dart';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../models/category_model.dart';
-import '../config/api_config.dart';
+import 'package:bike_shop/models/category_model.dart';
+import 'package:bike_shop/services/category_service.dart';
 
 /// ViewModel for loading product categories from the backend API.
 ///
@@ -36,21 +33,10 @@ class CategoryViewModel extends BaseViewModel {
     setLoading();
 
     try {
-      final response = await http
-          .get(Uri.parse('${ApiConfig.baseUrl}/categories'))
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        _categories = data.map((json) => Category.fromMap(json)).toList();
-        debugPrint('✅ Loaded ${_categories.length} categories');
-        setSuccess();
-      } else {
-        setError('Failed to load categories');
-      }
+      _categories = await CategoryService.instance.fetchCategories();
+      setSuccess();
     } catch (e) {
       setError('Could not connect to server');
-      debugPrint('❌ loadCategories error: $e');
     }
   }
 }

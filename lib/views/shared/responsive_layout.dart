@@ -54,8 +54,13 @@ class ResponsiveLayout extends StatelessWidget {
 /// Builder variant of [ResponsiveLayout] for cases where the widget needs
 /// access to [BuildContext] inside each branch.
 class ResponsiveBuilder extends StatelessWidget {
-  final Widget Function(BuildContext context, bool isMobile, bool isTablet,
-      bool isDesktop) builder;
+  final Widget Function(
+    BuildContext context,
+    bool isMobile,
+    bool isTablet,
+    bool isDesktop,
+  )
+  builder;
 
   const ResponsiveBuilder({super.key, required this.builder});
 

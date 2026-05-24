@@ -3,6 +3,7 @@ import 'package:bike_shop/viewmodels/address_provider.dart';
 import 'package:bike_shop/viewmodels/auth_provider.dart';
 import 'package:bike_shop/viewmodels/cart_provider.dart';
 import 'package:bike_shop/viewmodels/category_provider.dart';
+import 'package:bike_shop/viewmodels/checkout_viewmodel.dart';
 import 'package:bike_shop/viewmodels/favorite_provider.dart';
 import 'package:bike_shop/viewmodels/notification_provider.dart';
 import 'package:bike_shop/viewmodels/order_provider.dart';
@@ -117,8 +118,23 @@ class BikeShopApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => FavoritesViewModel()),
         ChangeNotifierProvider(create: (_) => OrderViewModel()),
         ChangeNotifierProvider(create: (_) => AddressViewModel()),
-        ChangeNotifierProvider(create: (_) => PaymentViewModel()),
+        // ── PaymentViewModel auto-initializes when AuthViewModel signs in ───
+        ChangeNotifierProxyProvider<AuthViewModel, PaymentViewModel>(
+          create: (_) => PaymentViewModel(),
+          update: (_, auth, payment) {
+            if (auth.isSignedIn &&
+                payment != null &&
+                !payment.isInitialized) {
+              payment.initialize(
+                email: auth.email,
+                name: auth.displayName,
+              );
+            }
+            return payment!;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
+        ChangeNotifierProvider(create: (_) => CheckoutViewModel()),
         ChangeNotifierProvider(
           create: (_) => CategoryViewModel()..loadCategories(),
         ),

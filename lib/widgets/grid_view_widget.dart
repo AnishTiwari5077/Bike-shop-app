@@ -1,3 +1,4 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -61,9 +62,9 @@ class _GridViewWidgetState extends State<GridViewWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ---------------- IMAGE (Fixed Height) ----------------
+              // ---------------- IMAGE (Responsive Height) ----------------
               SizedBox(
-                height: 130,
+                height: Responsive.value(context, mobile: 130.0, tablet: 150.0, desktop: 170.0),
                 width: double.infinity,
                 child: Stack(
                   children: [
@@ -76,7 +77,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                         widget.image,
                         fit: BoxFit.cover,
                         width: double.infinity,
-                        height: 130,
+                        height: Responsive.value(context, mobile: 130.0, tablet: 150.0, desktop: 170.0),
                         cacheHeight: 200,
                         cacheWidth: 200,
                       ),
