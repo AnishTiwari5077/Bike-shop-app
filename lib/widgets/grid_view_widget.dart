@@ -46,7 +46,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
         duration: const Duration(milliseconds: 120),
         child: Container(
           decoration: BoxDecoration(
-            color: AppTheme.cardBackground,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -75,6 +75,8 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                       child: Image.asset(
                         widget.image,
                         fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 130,
                         cacheHeight: 200,
                         cacheWidth: 200,
                       ),
@@ -108,86 +110,95 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                 ),
               ),
 
-              // ---------------- TEXT + PRICE ----------------
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+              // ✅ FIX: Expanded gives the inner Column a bounded height,
+              // allowing Spacer() to work correctly without overflow.
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisSize:
+                        MainAxisSize.max, // ✅ was: min (caused overflow)
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white60,
-                        fontSize: 12,
-                      ),
-                    ),
-
-                    if (widget.rating != null) ...[
                       const SizedBox(height: 4),
+                      Text(
+                        widget.subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
+                      ),
+
+                      if (widget.rating != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.rating!.toStringAsFixed(1),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      // Pushes price row to the bottom of the available space
+                      const Spacer(),
+
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 14),
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.rating!.toStringAsFixed(1),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
+                          Expanded(
+                            child: Text(
+                              widget.price,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          if (widget.onAddToCart != null)
+                            GestureDetector(
+                              onTap: widget.onAddToCart,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accentBlue,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.add_shopping_cart,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ],
-
-                    const SizedBox(height: 8),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            widget.price,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (widget.onAddToCart != null)
-                          GestureDetector(
-                            onTap: widget.onAddToCart,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppTheme.accentBlue,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.add_shopping_cart,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ],

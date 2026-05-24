@@ -1,5 +1,5 @@
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/providers/product_provider.dart';
+import 'package:bike_shop/viewmodels/product_provider.dart';
 import 'package:bike_shop/widgets/bike_promo.dart';
 import 'package:bike_shop/widgets/product_grid.dart';
 import 'package:bike_shop/widgets/stepped_row_icon.dart';
@@ -80,15 +80,15 @@ class _HomeContentState extends State<HomeContent> {
           Text(
             'Welcome Back! 👋',
             style: TextStyle(
-              color: AppTheme.textPrimary.withValues(alpha: .6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .6),
               fontSize: 16,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+           Text(
             'Find Your Dream Bike',
             style: TextStyle(
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
@@ -164,8 +164,8 @@ class _HomeContentState extends State<HomeContent> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
+            style:  TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),

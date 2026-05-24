@@ -1,5 +1,5 @@
-import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/providers/product_provider.dart';
+
+import 'package:bike_shop/viewmodels/product_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -88,7 +88,7 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                               ],
                             )
                           : null,
-                      color: isSelected ? null : AppTheme.cardBackground,
+                      color: isSelected ? null : Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
