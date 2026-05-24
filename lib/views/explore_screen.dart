@@ -1,3 +1,4 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/viewmodels/cart_provider.dart';
@@ -89,7 +90,10 @@ class CategoriesTab extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.horizontalPadding(context),
+        vertical: 16,
+      ),
       itemCount: categoryProvider.categories.length,
       itemBuilder: (context, index) {
         final cat = categoryProvider.categories[index];
@@ -192,7 +196,10 @@ class DealsTab extends StatelessWidget {
     final deals = productsProvider.products.take(6).toList();
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.horizontalPadding(context),
+        vertical: 16,
+      ),
       children: [
         // Flash Sale Banner
         Container(
@@ -269,11 +276,18 @@ class DealsTab extends StatelessWidget {
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.75,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: Responsive.gridColumns(context),
+            childAspectRatio: Responsive.value(
+              context,
+              mobile: 0.75,
+              tablet: 0.78,
+              desktop: 0.80,
+            ),
+            crossAxisSpacing:
+                Responsive.value(context, mobile: 12.0, tablet: 16.0),
+            mainAxisSpacing:
+                Responsive.value(context, mobile: 12.0, tablet: 16.0),
           ),
           itemCount: deals.length,
           itemBuilder: (context, index) {
@@ -403,7 +417,10 @@ class NewArrivalsTab extends StatelessWidget {
     final newProducts = productsProvider.products.reversed.take(6).toList();
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.horizontalPadding(context),
+        vertical: 16,
+      ),
       children: [
         const Text(
           'Just Added',

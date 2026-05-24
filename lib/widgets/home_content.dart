@@ -1,3 +1,4 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/viewmodels/product_provider.dart';
 import 'package:bike_shop/widgets/bike_promo.dart';
@@ -73,7 +74,7 @@ class _HomeContentState extends State<HomeContent> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: Responsive.horizontalPadding(context)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -115,7 +116,7 @@ class _HomeContentState extends State<HomeContent> {
     ];
 
     return SizedBox(
-      height: 200,
+      height: Responsive.value(context, mobile: 200.0, tablet: 240.0, desktop: 280.0),
       child: PageView.builder(
         controller: _promoController,
         itemCount: promos.length,
@@ -158,7 +159,7 @@ class _HomeContentState extends State<HomeContent> {
     String? subtitle,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: Responsive.horizontalPadding(context)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

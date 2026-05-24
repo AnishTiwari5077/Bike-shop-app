@@ -1,3 +1,4 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/viewmodels/order_provider.dart';
@@ -80,7 +81,10 @@ class _OrdersScreenState extends State<OrdersScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.horizontalPadding(context),
+        vertical: 16,
+      ),
       itemCount: orders.length,
       itemBuilder: (context, index) => _buildOrderCard(orders[index]),
     );

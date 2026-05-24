@@ -116,20 +116,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = context.read<AuthProvider>();
-      if (authProvider.isSignedIn) {
-        context.read<PaymentProvider>().initialize(
-          email: authProvider.email,
-          name: authProvider.displayName,
-        );
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
     final favorites = context.watch<FavoritesProvider>();
@@ -138,8 +124,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final themeVM = context.watch<ThemeViewModel>();
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: CustomScrollView(
+            slivers: [
           // ── App Bar / Header ─────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: 220,
@@ -447,6 +436,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 
@@ -491,8 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       onTap: () async {
         final success = await auth.signInWithGoogle();
         if (success && mounted) {
-          final paymentProvider = context.read<PaymentProvider>();
-          paymentProvider.initialize(email: auth.email, name: auth.displayName);
+          // PaymentViewModel initializes automatically via ProxyProvider
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Welcome, ${auth.displayName}!'),

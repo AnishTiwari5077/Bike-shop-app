@@ -13,7 +13,10 @@ class OrderDetailScreen extends StatelessWidget {
     return Scaffold(
       
       appBar: AppBar(title: Text('Order #${order.id.substring(0, 8)}')),
-      body: SingleChildScrollView(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,6 +37,8 @@ class OrderDetailScreen extends StatelessWidget {
             _buildSummarySection(context),
             const SizedBox(height: 100),
           ],
+        ),
+      ),
         ),
       ),
     );

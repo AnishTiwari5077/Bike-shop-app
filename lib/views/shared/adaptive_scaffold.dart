@@ -92,7 +92,9 @@ class AdaptiveScaffold extends StatelessWidget {
           type: BottomNavigationBarType.fixed,
           backgroundColor: theme.scaffoldBackgroundColor,
           selectedItemColor: theme.colorScheme.primary,
-          unselectedItemColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          unselectedItemColor: theme.colorScheme.onSurface.withValues(
+            alpha: 0.6,
+          ),
           items: destinations
               .map(
                 (d) => BottomNavigationBarItem(
@@ -121,9 +123,7 @@ class AdaptiveScaffold extends StatelessWidget {
                 : NavigationRailLabelType.selected,
             extended: isDesktop,
             backgroundColor: theme.colorScheme.surface,
-            selectedIconTheme: IconThemeData(
-              color: theme.colorScheme.primary,
-            ),
+            selectedIconTheme: IconThemeData(color: theme.colorScheme.primary),
             unselectedIconTheme: IconThemeData(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
