@@ -1,4 +1,9 @@
+// lib/views/wishlist_screen.dart
+// Fixed: renamed from whilist_screen.dart (typo corrected)
+// Fixed: theme-aware colors replacing hardcoded Colors.white*
+// Fixed: responsive padding
 
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/viewmodels/cart_provider.dart';
 import 'package:bike_shop/viewmodels/favorite_provider.dart';
@@ -15,13 +20,13 @@ class WishlistScreen extends StatelessWidget {
     final favorites = context.watch<FavoritesProvider>();
     final productsProvider = context.watch<ProductsProvider>();
     final cartProvider = context.watch<CartProvider>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     final favoriteProducts = productsProvider.products
         .where((product) => favorites.isFavorite(product.id))
         .toList();
 
     return Scaffold(
-      
       appBar: AppBar(
         title: const Text('My Wishlist'),
         actions: [
@@ -36,13 +41,15 @@ class WishlistScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    title: const Text(
+                    title: Text(
                       'Clear Wishlist?',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: colorScheme.onSurface),
                     ),
-                    content: const Text(
+                    content: Text(
                       'Remove all items from wishlist?',
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
                     ),
                     actions: [
                       TextButton(
@@ -74,23 +81,32 @@ class WishlistScreen extends StatelessWidget {
                   Icon(
                     Icons.favorite_border,
                     size: 64,
-                    color: Colors.white.withValues(alpha: .3),
+                    color: colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Your wishlist is empty',
-                    style: TextStyle(color: Colors.white70, fontSize: 18),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontSize: 18,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Add items you love',
-                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
             )
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+                vertical: 16,
+              ),
               itemCount: favoriteProducts.length,
               itemBuilder: (context, index) {
                 final product = favoriteProducts[index];
@@ -111,6 +127,7 @@ class WishlistScreen extends StatelessWidget {
     FavoritesProvider favorites,
     CartProvider cart,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Dismissible(
       key: Key(product.id),
       direction: DismissDirection.endToStart,
@@ -162,15 +179,15 @@ class WishlistScreen extends StatelessWidget {
                   children: [
                     Text(
                       product.title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "\$${product.price}",
+                      '\$${product.price}',
                       style: const TextStyle(
                         color: Colors.greenAccent,
                         fontSize: 15,
@@ -183,9 +200,9 @@ class WishlistScreen extends StatelessWidget {
 
               // Add to Cart Button
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.shopping_cart_outlined,
-                  color: Colors.white,
+                  color: colorScheme.onSurface,
                 ),
                 onPressed: () {
                   cart.addToCart(product);

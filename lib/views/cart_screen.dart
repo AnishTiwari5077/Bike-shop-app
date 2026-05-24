@@ -8,7 +8,6 @@ import 'package:bike_shop/views/order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
 
@@ -28,6 +27,7 @@ class _CartScreenState extends State<CartScreen> {
     ordersProvider.addOrder(newOrder);
 
     if (mounted) {
+      final colorScheme = Theme.of(context).colorScheme;
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -35,21 +35,26 @@ class _CartScreenState extends State<CartScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 28),
-              SizedBox(width: 12),
-              Text('Order Placed!', style: TextStyle(color: Colors.white)),
+              const Icon(Icons.check_circle, color: Colors.green, size: 28),
+              const SizedBox(width: 12),
+              Text(
+                'Order Placed!',
+                style: TextStyle(color: colorScheme.onSurface),
+              ),
             ],
           ),
-          content: const Text(
+          content: Text(
             'Your order has been successfully placed.',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close dialog
+                Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (_) => const OrdersScreen()),
@@ -67,9 +72,9 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
     final cartSummary = cart.getCartSummary();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      
       appBar: AppBar(
         title: const Text('Shopping Cart'),
         actions: [
@@ -84,13 +89,15 @@ class _CartScreenState extends State<CartScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    title: const Text(
+                    title: Text(
                       'Clear Cart?',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: colorScheme.onSurface),
                     ),
-                    content: const Text(
+                    content: Text(
                       'Remove all items from cart?',
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
                     ),
                     actions: [
                       TextButton(
@@ -141,6 +148,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildEmptyState() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -149,34 +157,37 @@ class _CartScreenState extends State<CartScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: colorScheme.onSurface.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.shopping_cart_outlined,
               size: 60,
-              color: Colors.white30,
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Your cart is empty',
             style: TextStyle(
-              color: Colors.white,
+              color: colorScheme.onSurface,
               fontSize: 24,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Add items to get started',
-            style: TextStyle(color: Colors.white54, fontSize: 16),
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.54),
+              fontSize: 16,
+            ),
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => HomeScreen()),
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
             ),
             icon: const Icon(Icons.shopping_bag_outlined),
             label: const Text('Start Shopping'),
@@ -192,6 +203,7 @@ class _CartScreenState extends State<CartScreen> {
     CartProvider cart,
   ) {
     final product = cartItem.product;
+    final colorScheme = Theme.of(context).colorScheme;
     return Dismissible(
       key: Key(product.id),
       direction: DismissDirection.endToStart,
@@ -231,7 +243,7 @@ class _CartScreenState extends State<CartScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.grey[850],
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: ClipRRect(
@@ -246,8 +258,8 @@ class _CartScreenState extends State<CartScreen> {
                 children: [
                   Text(
                     product.title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -257,7 +269,10 @@ class _CartScreenState extends State<CartScreen> {
                   const SizedBox(height: 4),
                   Text(
                     product.subtitle,
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      fontSize: 12,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -277,8 +292,8 @@ class _CartScreenState extends State<CartScreen> {
               children: [
                 Text(
                   '\$${cartItem.totalPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -286,7 +301,7 @@ class _CartScreenState extends State<CartScreen> {
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[850],
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -302,8 +317,8 @@ class _CartScreenState extends State<CartScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: Text(
                           '${cartItem.quantity}',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
                             fontSize: 14,
                           ),
                         ),
@@ -332,6 +347,7 @@ class _CartScreenState extends State<CartScreen> {
     CartProvider cart,
     Map<String, dynamic> summary,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -342,24 +358,33 @@ class _CartScreenState extends State<CartScreen> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.symmetric(
+            horizontal: Responsive.horizontalPadding(context),
+            vertical: 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildSummaryRow(
+                context,
                 'Subtotal',
                 '\$${summary['subtotal'].toStringAsFixed(2)}',
               ),
               const SizedBox(height: 8),
               _buildSummaryRow(
+                context,
                 'Discount',
                 summary['discount'] > 0
                     ? '-\$${summary['discount'].toStringAsFixed(2)}'
                     : '\$0.00',
                 isDiscount: true,
               ),
-              const Divider(color: Colors.white24, height: 24),
+              Divider(
+                color: colorScheme.onSurface.withValues(alpha: 0.24),
+                height: 24,
+              ),
               _buildSummaryRow(
+                context,
                 'Total',
                 '\$${summary['total'].toStringAsFixed(2)}',
                 isTotal: true,
@@ -369,7 +394,6 @@ class _CartScreenState extends State<CartScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  // Use CartViewModel.isLoading — no local bool needed
                   onPressed: cart.isLoading
                       ? null
                       : () => _processCheckout(context),
@@ -396,18 +420,22 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildSummaryRow(
+    BuildContext context,
     String label,
     String value, {
     bool isTotal = false,
     bool isDiscount = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: TextStyle(
-            color: isTotal ? Colors.white : Colors.white70,
+            color: isTotal
+                ? colorScheme.onSurface
+                : colorScheme.onSurface.withValues(alpha: 0.7),
             fontSize: isTotal ? 18 : 16,
             fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
           ),
@@ -418,8 +446,8 @@ class _CartScreenState extends State<CartScreen> {
             color: isDiscount
                 ? Colors.green
                 : isTotal
-                ? Colors.white
-                : Colors.white70,
+                ? colorScheme.onSurface
+                : colorScheme.onSurface.withValues(alpha: 0.7),
             fontSize: isTotal ? 20 : 16,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
           ),

@@ -1,3 +1,4 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/address_model.dart';
 import 'package:bike_shop/viewmodels/address_provider.dart';
@@ -10,9 +11,9 @@ class AddressesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AddressProvider>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      
       appBar: AppBar(title: const Text('My Addresses')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddressForm(context, null),
@@ -23,7 +24,12 @@ class AddressesScreen extends StatelessWidget {
       body: provider.addresses.isEmpty
           ? _buildEmptyState(context)
           : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              padding: EdgeInsets.fromLTRB(
+                Responsive.horizontalPadding(context),
+                16,
+                Responsive.horizontalPadding(context),
+                100,
+              ),
               itemCount: provider.addresses.length,
               itemBuilder: (context, index) {
                 return _AddressCard(
@@ -44,6 +50,7 @@ class AddressesScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -52,28 +59,31 @@ class AddressesScreen extends StatelessWidget {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: colorScheme.onSurface.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.location_off_outlined,
               size: 48,
-              color: Colors.white30,
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'No addresses saved',
             style: TextStyle(
-              color: Colors.white,
+              color: colorScheme.onSurface,
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Add a delivery address to get started',
-            style: TextStyle(color: Colors.white54, fontSize: 14),
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.54),
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 28),
           ElevatedButton.icon(
@@ -100,18 +110,19 @@ class AddressesScreen extends StatelessWidget {
     AddressProvider provider,
     Address address,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'Delete Address?',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: colorScheme.onSurface),
         ),
         content: Text(
           'Remove "${address.label}" address?',
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         actions: [
           TextButton(
@@ -147,6 +158,7 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -171,9 +183,9 @@ class _AddressCard extends StatelessWidget {
                 ],
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.edit_outlined,
-                    color: Colors.white54,
+                    color: colorScheme.onSurface.withValues(alpha: 0.54),
                     size: 20,
                   ),
                   onPressed: onEdit,
@@ -194,11 +206,10 @@ class _AddressCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            // Name & phone
             Text(
               address.fullName,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colorScheme.onSurface,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -206,25 +217,39 @@ class _AddressCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               address.phone,
-              style: const TextStyle(color: Colors.white60, fontSize: 13),
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 8),
-            // Address lines
             Text(
               address.street,
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 14,
+              ),
             ),
             Text(
               '${address.city}, ${address.state} ${address.postalCode}',
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 14,
+              ),
             ),
             Text(
               address.country,
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 14,
+              ),
             ),
             if (!address.isDefault) ...[
               const SizedBox(height: 14),
-              const Divider(color: Colors.white12, height: 1),
+              Divider(
+                color: colorScheme.onSurface.withValues(alpha: 0.12),
+                height: 1,
+              ),
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: onSetDefault,
@@ -402,15 +427,16 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.existing != null;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration:  BoxDecoration(
+        decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -424,7 +450,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: colorScheme.onSurface.withValues(alpha: 0.24),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -435,21 +461,24 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                 children: [
                   Text(
                     isEditing ? 'Edit Address' : 'Add New Address',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white54),
+                    icon: Icon(
+                      Icons.close,
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-            const Divider(color: Colors.white12),
+            Divider(color: colorScheme.onSurface.withValues(alpha: 0.12)),
             // Form
             Flexible(
               child: SingleChildScrollView(
@@ -460,10 +489,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Label picker
-                      const Text(
+                      Text(
                         'Address Label',
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -489,7 +518,9 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                                   border: Border.all(
                                     color: selected
                                         ? AppTheme.accentBlue
-                                        : Colors.white24,
+                                        : colorScheme.onSurface.withValues(
+                                            alpha: 0.24,
+                                          ),
                                   ),
                                 ),
                                 child: Text(
@@ -497,7 +528,9 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                                   style: TextStyle(
                                     color: selected
                                         ? Colors.white
-                                        : Colors.white60,
+                                        : colorScheme.onSurface.withValues(
+                                            alpha: 0.6,
+                                          ),
                                     fontWeight: selected
                                         ? FontWeight.w600
                                         : FontWeight.normal,
@@ -588,17 +621,19 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.check_circle_outline,
-                              color: Colors.white54,
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.54,
+                              ),
                               size: 20,
                             ),
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'Set as default address',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: colorScheme.onSurface,
                                   fontSize: 14,
                                 ),
                               ),
@@ -641,13 +676,18 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     bool required = false,
     TextInputType? keyboardType,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+        prefixIcon: Icon(
+          icon,
+          color: colorScheme.onSurface.withValues(alpha: 0.38),
+          size: 20,
+        ),
         filled: true,
         fillColor: Theme.of(context).cardColor,
         border: OutlineInputBorder(

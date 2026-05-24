@@ -1,4 +1,5 @@
 import 'package:bike_shop/viewmodels/auth_provider.dart';
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/viewmodels/payment_provider.dart';
 import 'package:bike_shop/views/add_card_screen.dart';
@@ -12,9 +13,9 @@ class PaymentMethodsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PaymentProvider>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      
       appBar: AppBar(title: const Text('Payment Methods')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addCard(context, provider),
@@ -27,13 +28,18 @@ class PaymentMethodsScreen extends StatelessWidget {
               child: CircularProgressIndicator(color: AppTheme.accentBlue),
             )
           : provider.error != null
-          ? _buildError(provider.error!)
+          ? _buildError(provider.error!, colorScheme)
           : !provider.hasCards
           ? _buildEmptyState(context, provider)
           : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              padding: EdgeInsets.fromLTRB(
+                Responsive.horizontalPadding(context),
+                16,
+                Responsive.horizontalPadding(context),
+                100,
+              ),
               children: [
-                const _SectionLabel('SAVED CARDS'),
+                _SectionLabel(text: 'SAVED CARDS', colorScheme: colorScheme),
                 const SizedBox(height: 12),
                 ...provider.cards.map(
                   (card) => _StripeCardTile(
@@ -44,7 +50,7 @@ class PaymentMethodsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 28),
-                const _SectionLabel('OTHER OPTIONS'),
+                _SectionLabel(text: 'OTHER OPTIONS', colorScheme: colorScheme),
                 const SizedBox(height: 12),
                 _DigitalWalletTile(
                   icon: Icons.account_balance_wallet_outlined,
@@ -73,7 +79,6 @@ class PaymentMethodsScreen extends StatelessWidget {
   Future<void> _addCard(BuildContext context, PaymentProvider provider) async {
     final authProvider = context.read<AuthProvider>();
 
-    // Check sign-in first
     if (!authProvider.isSignedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -91,7 +96,6 @@ class PaymentMethodsScreen extends StatelessWidget {
       return;
     }
 
-    // Auto-initialize if needed
     if (!provider.isInitialized) {
       await provider.initialize(
         email: authProvider.email,
@@ -113,11 +117,10 @@ class PaymentMethodsScreen extends StatelessWidget {
       }
     }
 
-    // Navigate to AddCardScreen instead of opening native sheet
     await AddCardScreen.show(context);
   }
 
-  Widget _buildError(String message) {
+  Widget _buildError(String message, ColorScheme colorScheme) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -138,6 +141,7 @@ class PaymentMethodsScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context, PaymentProvider provider) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -146,28 +150,31 @@ class PaymentMethodsScreen extends StatelessWidget {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: colorScheme.onSurface.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.credit_card_off_outlined,
               size: 48,
-              color: Colors.white30,
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'No payment methods',
             style: TextStyle(
-              color: Colors.white,
+              color: colorScheme.onSurface,
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Add a card to checkout faster',
-            style: TextStyle(color: Colors.white54, fontSize: 14),
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.54),
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 28),
           ElevatedButton.icon(
@@ -185,18 +192,19 @@ class PaymentMethodsScreen extends StatelessWidget {
     PaymentProvider provider,
     StripeCard card,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'Remove Card?',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: colorScheme.onSurface),
         ),
         content: Text(
           'Remove •••• ${card.last4}?',
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         actions: [
           TextButton(
@@ -234,6 +242,7 @@ class _StripeCardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -258,16 +267,16 @@ class _StripeCardTile extends StatelessWidget {
                     children: [
                       Text(
                         card.displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: colorScheme.onSurface,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
                         'Expires ${card.expiry}',
-                        style: const TextStyle(
-                          color: Colors.white54,
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.54),
                           fontSize: 13,
                         ),
                       ),
@@ -308,7 +317,10 @@ class _StripeCardTile extends StatelessWidget {
             ),
             if (!isDefault) ...[
               const SizedBox(height: 12),
-              const Divider(color: Colors.white12, height: 1),
+              Divider(
+                color: colorScheme.onSurface.withValues(alpha: 0.12),
+                height: 1,
+              ),
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: onSetDefault,
@@ -366,14 +378,15 @@ class _StripeCardTile extends StatelessWidget {
 
 class _SectionLabel extends StatelessWidget {
   final String text;
-  const _SectionLabel(this.text);
+  final ColorScheme colorScheme;
+  const _SectionLabel({required this.text, required this.colorScheme});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: Colors.white54,
+      style: TextStyle(
+        color: colorScheme.onSurface.withValues(alpha: 0.54),
         fontSize: 12,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.8,
@@ -399,6 +412,7 @@ class _DigitalWalletTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -424,22 +438,25 @@ class _DigitalWalletTile extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(color: Colors.white54, fontSize: 13),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
-              color: Colors.white38,
+              color: colorScheme.onSurface.withValues(alpha: 0.38),
               size: 16,
             ),
           ],
