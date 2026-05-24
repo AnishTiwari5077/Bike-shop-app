@@ -1,6 +1,6 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
-import 'package:bike_shop/viewmodels/product_provider.dart';
+import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -57,7 +57,7 @@ class _SearchModalState extends State<SearchModal> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
-      decoration:  BoxDecoration(
+      decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
@@ -75,10 +75,10 @@ class _SearchModalState extends State<SearchModal> {
                   child: TextField(
                     controller: _searchController,
                     autofocus: true,
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: 'Search bikes, helmets, accessories...',
-                      hintStyle: const TextStyle(color: Colors.white54),
+                      hintStyle: TextStyle(color: Colors.white54),
                       prefixIcon: const Icon(
                         Icons.search,
                         color: Colors.white70,
@@ -207,7 +207,7 @@ class _SearchModalState extends State<SearchModal> {
                 leading: const Icon(Icons.history, color: Colors.white54),
                 title: Text(
                   recentSearches[index],
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white),
                 ),
                 trailing: const Icon(
                   Icons.north_west,
@@ -268,7 +268,7 @@ class _SearchModalState extends State<SearchModal> {
                 children: [
                   Text(
                     product.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -279,7 +279,7 @@ class _SearchModalState extends State<SearchModal> {
                   const SizedBox(height: 4),
                   Text(
                     product.subtitle,
-                    style: const TextStyle(color: Colors.white60, fontSize: 13),
+                    style: TextStyle(color: Colors.white60, fontSize: 13),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -288,7 +288,7 @@ class _SearchModalState extends State<SearchModal> {
             ),
             Text(
               '\$${product.price.toStringAsFixed(2)}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.accentBlue,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

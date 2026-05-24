@@ -1,8 +1,8 @@
-// lib/providers/product_provider.dart
+// lib/providers/product_viewmodel.dart
 // ---------------------------------------------------------------------------
 // ProductViewModel — migrated from ProductsProvider to MVVM pattern.
 //
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/product_provider.dart'
+// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/product_viewmodel.dart'
 // All existing screens continue to import from this path without modification.
 //
 // Changes from original:
@@ -19,7 +19,7 @@ import 'package:bike_shop/services/product_service.dart';
 
 /// ViewModel for product listing, search, filtering, and detail fetching.
 ///
-/// Consumed by ExploreScreen, HomeScreen, ProductDetailsScreen, WishlistScreen.
+/// Consumed by ExploreScreen, HomeScreen, ProductDetailsScreen, WishListScreen.
 /// Access via `context.watch<ProductViewModel>()` or `context.read<ProductViewModel>()`.
 class ProductViewModel extends BaseViewModel {
   List<Product> _products = [];
@@ -36,7 +36,7 @@ class ProductViewModel extends BaseViewModel {
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
 
-  /// Client-side filter — used by ProductGrid, WishlistScreen, ExploreScreen.
+  /// Client-side filter — used by ProductGrid, WishListScreen, ExploreScreen.
   List<Product> get displayedProducts {
     return _products.where((product) {
       final matchesSearch =

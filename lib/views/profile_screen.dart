@@ -1,12 +1,12 @@
-import 'package:bike_shop/viewmodels/auth_provider.dart';
-import 'package:bike_shop/viewmodels/cart_provider.dart';
-import 'package:bike_shop/viewmodels/favorite_provider.dart';
-import 'package:bike_shop/viewmodels/order_provider.dart';
-import 'package:bike_shop/viewmodels/payment_provider.dart';
+import 'package:bike_shop/viewmodels/auth_viewmodel.dart';
+import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
+import 'package:bike_shop/viewmodels/favorites_viewmodel.dart';
+import 'package:bike_shop/viewmodels/order_viewmodel.dart';
+import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 import 'package:bike_shop/views/address_screen.dart';
 import 'package:bike_shop/views/order_screen.dart';
 import 'package:bike_shop/views/payment_screen.dart';
-import 'package:bike_shop/views/whilist_screen.dart';
+import 'package:bike_shop/views/wishlist_screen.dart';
 // Fixed: import corrected filename (wishlist_screen instead of whilist_screen)
 
 import 'package:flutter/material.dart';
@@ -142,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
-    final favorites = context.watch<FavoritesProvider>();
+    final favorites = context.watch<FavoritesViewModel>();
     final orders = context.watch<OrdersProvider>();
     final auth = context.watch<AuthProvider>();
     final themeVM = context.watch<ThemeViewModel>();
@@ -175,8 +175,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 12),
                         Text(
                           auth.isSignedIn ? auth.displayName : 'Guest',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
@@ -184,16 +184,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         if (auth.isSignedIn)
                           Text(
                             auth.email,
-                            style: const TextStyle(
-                              color: Colors.white60,
+                            style: TextStyle(
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
                               fontSize: 13,
                             ),
                           ),
                         if (!auth.isSignedIn)
-                          const Text(
+                          Text(
                             'Sign in to access all features',
                             style: TextStyle(
-                              color: Colors.white54,
+                              color: colorScheme.onSurface.withValues(alpha: 0.54),
                               fontSize: 13,
                             ),
                           ),
@@ -283,7 +283,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const WishlistScreen(),
+                            builder: (_) => const WishListScreen(),
                           ),
                         ),
                       ),
@@ -527,10 +527,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 80,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
-        color: Colors.grey[700],
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3),
+        color: Theme.of(context).cardColor,
       ),
-      child: const Icon(Icons.person, size: 40, color: Colors.white),
+      child: Icon(Icons.person, size: 40, color: Theme.of(context).colorScheme.onSurface),
     );
   }
 
@@ -562,7 +562,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
@@ -580,15 +580,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _GoogleLogo(),
-                  SizedBox(width: 12),
+                  const _GoogleLogo(),
+                  const SizedBox(width: 12),
                   Text(
                     'Continue with Google',
                     style: TextStyle(
-                      color: Color(0xFF3C4043),
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),

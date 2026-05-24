@@ -80,7 +80,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        hintStyle: const TextStyle(color: textTertiary),
+        hintStyle: TextStyle(color: textTertiary),
       ),
     );
   }
@@ -136,7 +136,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
-        hintStyle: const TextStyle(color: _lightTextTertiary),
+        hintStyle: TextStyle(color: _lightTextTertiary),
       ),
       textTheme: const TextTheme(
         bodyLarge: TextStyle(color: _lightTextPrimary),

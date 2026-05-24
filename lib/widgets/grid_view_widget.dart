@@ -101,7 +101,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                                   : Icons.favorite_border,
                               color: widget.isFavorite
                                   ? Colors.red
-                                  : Colors.white,
+                                  : Theme.of(context).colorScheme.onSurface,
                               size: 20,
                             ),
                           ),
@@ -125,8 +125,8 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                         widget.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
@@ -136,8 +136,8 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                         widget.subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white60,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -154,8 +154,8 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                             const SizedBox(width: 4),
                             Text(
                               widget.rating!.toStringAsFixed(1),
-                              style: const TextStyle(
-                                color: Colors.white70,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontSize: 12,
                               ),
                             ),
@@ -172,8 +172,8 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                           Expanded(
                             child: Text(
                               widget.price,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),

@@ -1,6 +1,6 @@
 //import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/viewmodels/cart_provider.dart';
-import 'package:bike_shop/viewmodels/notification_provider.dart'; // add this
+import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
+import 'package:bike_shop/viewmodels/notification_viewmodel.dart'; // add this
 import 'package:bike_shop/views/cart_screen.dart';
 import 'package:bike_shop/views/notification_screen.dart';
 import 'package:bike_shop/widgets/home_content.dart';
@@ -48,7 +48,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     child: Text(
                       '${cart.itemCount}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -89,7 +89,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     child: Text(
                       '$unreadCount',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,

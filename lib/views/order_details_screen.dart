@@ -190,7 +190,7 @@ class OrderDetailScreen extends StatelessWidget {
           ),
           Text(
             '\$${item.totalPrice.toStringAsFixed(2)}',
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.accentBlue,
               fontSize: 16,
               fontWeight: FontWeight.bold,

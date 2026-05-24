@@ -1,8 +1,8 @@
-// lib/providers/auth_provider.dart
+// lib/providers/auth_viewmodel.dart
 // ---------------------------------------------------------------------------
 // AuthViewModel — migrated from AuthProvider to MVVM pattern.
 //
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/auth_provider.dart'
+// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/auth_viewmodel.dart'
 //
 // Changes from original:
 //   - Extends BaseViewModel instead of using `with ChangeNotifier`

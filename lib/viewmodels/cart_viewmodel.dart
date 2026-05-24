@@ -1,8 +1,8 @@
-// lib/providers/cart_provider.dart
+// lib/providers/cart_viewmodel.dart
 // ---------------------------------------------------------------------------
 // CartViewModel — migrated from CartProvider to MVVM pattern.
 //
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/cart_provider.dart'
+// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/cart_viewmodel.dart'
 // All existing screens continue to import from this path without modification.
 //
 // Changes from original:
@@ -130,7 +130,6 @@ class CartViewModel extends BaseViewModel {
   /// Uses [BaseViewModel.isLoading] so the View can react without a local bool.
   Future<Order> checkout() async {
     setLoading();
-    await Future.delayed(const Duration(seconds: 2)); // simulate network
 
     final order = Order(
       id: DateTime.now().millisecondsSinceEpoch.toString(),

@@ -1,7 +1,7 @@
-import 'package:bike_shop/viewmodels/auth_provider.dart';
+import 'package:bike_shop/viewmodels/auth_viewmodel.dart';
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/viewmodels/payment_provider.dart';
+import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 import 'package:bike_shop/views/add_card_screen.dart';
 import 'package:bike_shop/services/stripe_service.dart';
 import 'package:flutter/material.dart';
@@ -97,24 +97,15 @@ class PaymentMethodsScreen extends StatelessWidget {
     }
 
     if (!provider.isInitialized) {
-      await provider.initialize(
-        email: authProvider.email,
-        name: authProvider.displayName,
-      );
-      if (!context.mounted) return;
-
-      if (!provider.isInitialized) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Could not connect to payment service. Check your connection.',
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Payment service not ready. Please sign in first.',
           ),
-        );
-        return;
-      }
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
     }
 
     await AddCardScreen.show(context);
@@ -131,7 +122,7 @@ class PaymentMethodsScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message,
-              style: const TextStyle(color: Colors.red, fontSize: 16),
+              style: TextStyle(color: Colors.red, fontSize: 16),
               textAlign: TextAlign.center,
             ),
           ],

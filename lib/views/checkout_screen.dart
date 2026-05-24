@@ -1,11 +1,11 @@
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
-import 'package:bike_shop/viewmodels/auth_provider.dart';
+import 'package:bike_shop/viewmodels/auth_viewmodel.dart';
 import 'package:bike_shop/viewmodels/checkout_viewmodel.dart';
-import 'package:bike_shop/viewmodels/notification_provider.dart';
-import 'package:bike_shop/viewmodels/order_provider.dart';
-import 'package:bike_shop/viewmodels/payment_provider.dart';
+import 'package:bike_shop/viewmodels/notification_viewmodel.dart';
+import 'package:bike_shop/viewmodels/order_viewmodel.dart';
+import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 import 'package:bike_shop/views/add_card_screen.dart';
 import 'package:bike_shop/views/order_screen.dart';
 import 'package:bike_shop/services/stripe_service.dart';
@@ -14,7 +14,13 @@ import 'package:provider/provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Order order;
-  const CheckoutScreen({super.key, required this.order});
+  final VoidCallback? onPaymentComplete;
+  
+  const CheckoutScreen({
+    super.key, 
+    required this.order,
+    this.onPaymentComplete,
+  });
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -83,13 +89,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       builder: (_) => _PaymentSuccessSheet(
         order: widget.order,
         onDone: () {
-          // Pop sheet + checkout, go to Orders
           Navigator.of(context)
-            ..pop() // sheet
-            ..pop() // checkout
-            ..pushReplacement(
-              MaterialPageRoute(builder: (_) => const OrdersScreen()),
-            );
+            ..pop()
+            ..pop();
+
+          widget.onPaymentComplete?.call();
         },
       ),
     );
@@ -313,7 +317,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -367,7 +371,7 @@ class _OrderSummaryCard extends StatelessWidget {
                         children: [
                           Text(
                             item.product.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -377,7 +381,7 @@ class _OrderSummaryCard extends StatelessWidget {
                           ),
                           Text(
                             'Qty: ${item.quantity}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white54,
                               fontSize: 12,
                             ),
@@ -387,7 +391,7 @@ class _OrderSummaryCard extends StatelessWidget {
                     ),
                     Text(
                       '\$${item.totalPrice.toStringAsFixed(2)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -458,7 +462,7 @@ class _CardTile extends StatelessWidget {
                 children: [
                   Text(
                     card.displayName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -466,7 +470,7 @@ class _CardTile extends StatelessWidget {
                   ),
                   Text(
                     'Expires ${card.expiry}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
                   ),
                 ],
               ),
@@ -581,12 +585,12 @@ class _PriceBreakdown extends StatelessWidget {
           _row(
             'Total',
             '\$${total.toStringAsFixed(2)}',
-            labelStyle: const TextStyle(
+            labelStyle: TextStyle(
               color: Colors.white,
               fontSize: 17,
               fontWeight: FontWeight.bold,
             ),
-            valueStyle: const TextStyle(
+            valueStyle: TextStyle(
               color: AppTheme.accentBlue,
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -611,7 +615,7 @@ class _PriceBreakdown extends StatelessWidget {
           label,
           style:
               labelStyle ??
-              const TextStyle(color: Colors.white70, fontSize: 14),
+              TextStyle(color: Colors.white70, fontSize: 14),
         ),
         Text(
           value,
@@ -700,7 +704,7 @@ class _PayButton extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       'Pay \$${total.toStringAsFixed(2)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -774,13 +778,13 @@ class _PaymentSuccessSheet extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Order #${order.id.substring(0, 8)} is now complete.',
-              style: const TextStyle(color: Colors.white60, fontSize: 14),
+              style: TextStyle(color: Colors.white60, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
             Text(
               '\$${(order.totalAmount * 1.08).toStringAsFixed(2)} charged',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.accentBlue,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -846,7 +850,7 @@ class _PaymentSuccessSheet extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           label,
-          style: const TextStyle(color: Colors.white54, fontSize: 13),
+          style: TextStyle(color: Colors.white54, fontSize: 13),
         ),
         const Spacer(),
         Text(

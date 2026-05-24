@@ -1,5 +1,5 @@
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/viewmodels/cart_provider.dart';
+import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -95,7 +95,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
                                 cart.itemCount > 99
                                     ? '99+'
                                     : '${cart.itemCount}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,

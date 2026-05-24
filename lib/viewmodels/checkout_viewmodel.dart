@@ -9,10 +9,10 @@
 import 'package:bike_shop/core/base_viewmodel.dart';
 import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/services/notification_service.dart';
-import 'package:bike_shop/viewmodels/auth_provider.dart';
-import 'package:bike_shop/viewmodels/notification_provider.dart';
-import 'package:bike_shop/viewmodels/order_provider.dart';
-import 'package:bike_shop/viewmodels/payment_provider.dart';
+import 'package:bike_shop/viewmodels/auth_viewmodel.dart';
+import 'package:bike_shop/viewmodels/notification_viewmodel.dart';
+import 'package:bike_shop/viewmodels/order_viewmodel.dart';
+import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 
 /// ViewModel that orchestrates the checkout payment flow.
 ///

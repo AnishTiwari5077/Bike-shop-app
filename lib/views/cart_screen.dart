@@ -1,15 +1,17 @@
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/cart_items.dart';
-import 'package:bike_shop/viewmodels/cart_provider.dart';
-import 'package:bike_shop/viewmodels/order_provider.dart';
+import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
+import 'package:bike_shop/viewmodels/order_viewmodel.dart';
 import 'package:bike_shop/views/home_screen.dart';
 import 'package:bike_shop/views/order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class CartScreen extends StatefulWidget {
-  const CartScreen({super.key});
+  final VoidCallback? onGoHome;
+  
+  const CartScreen({super.key, this.onGoHome});
 
   @override
   State<CartScreen> createState() => _CartScreenState();
@@ -185,10 +187,7 @@ class _CartScreenState extends State<CartScreen> {
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            ),
+            onPressed: widget.onGoHome ?? () => Navigator.pop(context),
             icon: const Icon(Icons.shopping_bag_outlined),
             label: const Text('Start Shopping'),
           ),
@@ -279,7 +278,7 @@ class _CartScreenState extends State<CartScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '\$${product.price.toStringAsFixed(2)} x ${cartItem.quantity}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.accentCyan,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,

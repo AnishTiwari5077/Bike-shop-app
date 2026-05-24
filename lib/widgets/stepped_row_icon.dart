@@ -1,5 +1,5 @@
 import 'package:bike_shop/config/responsive.dart';
-import 'package:bike_shop/viewmodels/product_provider.dart';
+import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -93,7 +93,7 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                       border: Border.all(
                         color: isSelected
                             ? (category['color'] as Color).withValues(alpha: .5)
-                            : Colors.white.withValues(alpha: .1),
+                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: .1),
                         width: isSelected ? 2 : 1,
                       ),
                       boxShadow: isSelected
@@ -115,7 +115,7 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                         child: Icon(
                           category['icon'] as IconData,
                           size: Responsive.value(context, mobile: 32.0, tablet: 36.0, desktop: 40.0),
-                          color: isSelected ? Colors.white : Colors.white70,
+                          color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
@@ -124,7 +124,7 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                   AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 200),
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white60,
+                      color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: isSelected ? 13 : 12,
                       fontWeight: isSelected
                           ? FontWeight.w600

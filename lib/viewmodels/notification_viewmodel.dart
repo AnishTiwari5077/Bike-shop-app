@@ -1,8 +1,8 @@
-// lib/providers/notification_provider.dart
+// lib/providers/notification_viewmodel.dart
 // ---------------------------------------------------------------------------
 // NotificationViewModel — migrated from NotificationProvider to MVVM pattern.
 //
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/notification_provider.dart'
+// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/notification_viewmodel.dart'
 //
 // Changes from original:
 //   - Extends BaseViewModel instead of using `with ChangeNotifier`
