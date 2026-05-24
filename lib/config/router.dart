@@ -11,18 +11,9 @@ import 'package:go_router/go_router.dart';
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (_, __) => const MainScreen(),
-    ),
-    GoRoute(
-      path: '/cart',
-      builder: (_, __) => const CartScreen(),
-    ),
-    GoRoute(
-      path: '/orders',
-      builder: (_, __) => const OrdersScreen(),
-    ),
+    GoRoute(path: '/', builder: (_, __) => const MainScreen()),
+    GoRoute(path: '/cart', builder: (_, __) => const CartScreen()),
+    GoRoute(path: '/orders', builder: (_, __) => const OrdersScreen()),
     GoRoute(
       path: '/product',
       builder: (context, state) {

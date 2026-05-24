@@ -63,8 +63,13 @@ class _GridViewWidgetState extends State<GridViewWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ---------------- IMAGE (Responsive Height) ----------------
-              SizedBox(
-                height: Responsive.value(context, mobile: 130.0, tablet: 150.0, desktop: 170.0),
+              Container(
+                height: Responsive.value(
+                  context,
+                  mobile: 130.0,
+                  tablet: 150.0,
+                  desktop: 170.0,
+                ),
                 width: double.infinity,
                 child: Stack(
                   children: [
@@ -73,16 +78,28 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                         topLeft: Radius.circular(16),
                         topRight: Radius.circular(16),
                       ),
-                      child: Image.asset(
-                        widget.image,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: Responsive.value(context, mobile: 130.0, tablet: 150.0, desktop: 170.0),
-                        cacheHeight: 200,
-                        cacheWidth: 200,
-                      ),
+                      child: widget.isNetworkImage
+                          ? Image.network(
+                              widget.image,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              cacheHeight: 200,
+                              cacheWidth: 200,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(child: Icon(Icons.error)),
+                            )
+                          : Image.asset(
+                              widget.image,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              cacheHeight: 200,
+                              cacheWidth: 200,
+                            ),
                     ),
 
+                    // Favorite Button
                     if (widget.onFavorite != null)
                       Positioned(
                         top: 8,
@@ -111,14 +128,11 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                 ),
               ),
 
-              // ✅ FIX: Expanded gives the inner Column a bounded height,
-              // allowing Spacer() to work correctly without overflow.
+              // ---------------- CONTENT ----------------
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
-                    mainAxisSize:
-                        MainAxisSize.max, // ✅ was: min (caused overflow)
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -131,19 +145,23 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 4),
+
+                      const SizedBox(height: 2),
+
                       Text(
                         widget.subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
 
                       if (widget.rating != null) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Row(
                           children: [
                             const Icon(
@@ -155,7 +173,9 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                             Text(
                               widget.rating!.toStringAsFixed(1),
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontSize: 12,
                               ),
                             ),
@@ -163,7 +183,6 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                         ),
                       ],
 
-                      // Pushes price row to the bottom of the available space
                       const Spacer(),
 
                       Row(
@@ -180,6 +199,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+
                           if (widget.onAddToCart != null)
                             GestureDetector(
                               onTap: widget.onAddToCart,

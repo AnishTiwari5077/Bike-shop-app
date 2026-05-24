@@ -13,7 +13,8 @@ class StripeService {
   // Physical device   → 'http://<your-local-IP>:3000'  e.g. 192.168.1.6
   //static const String _baseUrl = 'http://10.0.2.2:3000';
 
-  static const String _baseUrl = 'http://192.168.1.6:3000';
+  // static const String _baseUrl = 'http://192.168.1.6:3000';
+  static const String _baseUrl = 'http://192.168.1.4:3000';
 
   final Map<String, String> _headers = {'Content-Type': 'application/json'};
 
