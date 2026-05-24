@@ -1,5 +1,5 @@
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/providers/cart_provider.dart';
+import 'package:bike_shop/viewmodels/cart_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,8 +29,8 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.only(bottom: safeAreaBottom),
-      decoration: const BoxDecoration(
-        color: AppTheme.secondaryBackground,
+      decoration:  BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),

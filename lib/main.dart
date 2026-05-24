@@ -1,15 +1,16 @@
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/providers/address_provider.dart';
-import 'package:bike_shop/providers/auth_provider.dart';
-import 'package:bike_shop/providers/cart_provider.dart';
-import 'package:bike_shop/providers/category_provider.dart';
-import 'package:bike_shop/providers/favorite_provider.dart';
-import 'package:bike_shop/providers/notification_provider.dart';
-import 'package:bike_shop/providers/order_provider.dart';
-import 'package:bike_shop/providers/payment_provider.dart';
-import 'package:bike_shop/providers/product_provider.dart';
-import 'package:bike_shop/screens/main_screen.dart';
-import 'package:bike_shop/service/notification_service.dart';
+import 'package:bike_shop/viewmodels/address_provider.dart';
+import 'package:bike_shop/viewmodels/auth_provider.dart';
+import 'package:bike_shop/viewmodels/cart_provider.dart';
+import 'package:bike_shop/viewmodels/category_provider.dart';
+import 'package:bike_shop/viewmodels/favorite_provider.dart';
+import 'package:bike_shop/viewmodels/notification_provider.dart';
+import 'package:bike_shop/viewmodels/order_provider.dart';
+import 'package:bike_shop/viewmodels/payment_provider.dart';
+import 'package:bike_shop/viewmodels/product_provider.dart';
+import 'package:bike_shop/views/main_screen.dart';
+import 'package:bike_shop/services/notification_service.dart';
+import 'package:bike_shop/viewmodels/theme_viewmodel.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -106,25 +107,40 @@ class BikeShopApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => CartProvider()),
-        ChangeNotifierProvider(create: (_) => FavoritesProvider()),
-        ChangeNotifierProvider(create: (_) => OrdersProvider()),
-        ChangeNotifierProvider(create: (_) => AddressProvider()),
-        ChangeNotifierProvider(create: (_) => PaymentProvider()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        // ─── Theme (must be first so Consumer below can access it) ────────
+        ChangeNotifierProvider(create: (_) => ThemeViewModel()),
+
+        // ─── Feature providers (existing — names updated to new ViewModel
+        //     classes after Phase 3 migration; import paths unchanged) ─────
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => CartViewModel()),
+        ChangeNotifierProvider(create: (_) => FavoritesViewModel()),
+        ChangeNotifierProvider(create: (_) => OrderViewModel()),
+        ChangeNotifierProvider(create: (_) => AddressViewModel()),
+        ChangeNotifierProvider(create: (_) => PaymentViewModel()),
+        ChangeNotifierProvider(create: (_) => NotificationViewModel()),
         ChangeNotifierProvider(
-          create: (_) => CategoryProvider()..loadCategories(),
+          create: (_) => CategoryViewModel()..loadCategories(),
         ),
         ChangeNotifierProvider(
-          create: (_) => ProductsProvider()..loadProducts(),
+          create: (_) => ProductViewModel()..loadProducts(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Bike Shop',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
-        home: const MainScreen(),
+      // ─── Consumer wraps MaterialApp so ThemeViewModel changes rebuild it ─
+      child: Consumer<ThemeViewModel>(
+        builder: (context, themeViewModel, _) {
+          return MaterialApp(
+            title: 'Bike Shop',
+            debugShowCheckedModeBanner: false,
+            // Light theme applied when ThemeMode.light or system prefers light
+            theme: AppTheme.lightTheme,
+            // Dark theme applied when ThemeMode.dark or system prefers dark
+            darkTheme: AppTheme.darkTheme,
+            // Controlled by ThemeViewModel (persisted via SharedPreferences)
+            themeMode: themeViewModel.themeMode,
+            home: const MainScreen(),
+          );
+        },
       ),
     );
   }

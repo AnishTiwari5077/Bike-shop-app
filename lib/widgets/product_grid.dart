@@ -1,12 +1,13 @@
 import 'package:bike_shop/config/theme.dart';
-import 'package:bike_shop/providers/cart_provider.dart';
-import 'package:bike_shop/providers/favorite_provider.dart';
-import 'package:bike_shop/providers/product_provider.dart';
-import 'package:bike_shop/screens/cart_screen.dart';
-import 'package:bike_shop/screens/product_details_screen.dart';
+import 'package:bike_shop/viewmodels/cart_provider.dart';
+import 'package:bike_shop/viewmodels/favorite_provider.dart';
+import 'package:bike_shop/viewmodels/product_provider.dart';
+import 'package:bike_shop/views/cart_screen.dart';
+import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:bike_shop/widgets/grid_view_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:bike_shop/config/responsive.dart';
 
 class ProductGrid extends StatelessWidget {
   const ProductGrid({super.key});
@@ -28,16 +29,21 @@ class ProductGrid extends StatelessWidget {
     }
 
     if (products.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(50),
+          padding: const EdgeInsets.all(50),
           child: Column(
             children: [
-              Icon(Icons.search_off, size: 64, color: Colors.white30),
-              SizedBox(height: 16),
+              const Icon(Icons.search_off, size: 64, color: Colors.white30),
+              const SizedBox(height: 16),
               Text(
                 'No products found',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 18),
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: 18,
+                ),
               ),
             ],
           ),
@@ -45,16 +51,35 @@ class ProductGrid extends StatelessWidget {
       );
     }
 
+    // ✅ FIX: Use MediaQuery to detect large text scaling and shrink the ratio
+    // so the card always has enough vertical room regardless of font scale.
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final mobileRatio = textScale > 1.1 ? 0.60 : 0.70;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: Responsive.gridColumns(context),
+          // ✅ FIX: ratio now adapts to the system text scale factor
+          childAspectRatio: Responsive.value(
+            context,
+            mobile: mobileRatio,
+            tablet: 0.72,
+            desktop: 0.78,
+          ),
+          crossAxisSpacing: Responsive.value(
+            context,
+            mobile: 16.0,
+            tablet: 20.0,
+          ),
+          mainAxisSpacing: Responsive.value(
+            context,
+            mobile: 16.0,
+            tablet: 20.0,
+          ),
         ),
         itemCount: products.length,
         itemBuilder: (context, index) {

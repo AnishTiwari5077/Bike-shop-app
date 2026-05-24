@@ -1,7 +1,7 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
-import 'package:bike_shop/providers/product_provider.dart';
-import 'package:bike_shop/screens/product_details_screen.dart';
+import 'package:bike_shop/viewmodels/product_provider.dart';
+import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -57,8 +57,8 @@ class _SearchModalState extends State<SearchModal> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
-      decoration: const BoxDecoration(
-        color: AppTheme.secondaryBackground,
+      decoration:  BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -99,7 +99,7 @@ class _SearchModalState extends State<SearchModal> {
                             )
                           : null,
                       filled: true,
-                      fillColor: AppTheme.primaryBackground,
+                      fillColor: Theme.of(context).scaffoldBackgroundColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -244,7 +244,7 @@ class _SearchModalState extends State<SearchModal> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppTheme.primaryBackground,
+          color: Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
