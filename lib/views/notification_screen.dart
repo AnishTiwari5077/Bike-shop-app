@@ -15,7 +15,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    // Mark all notifications as read when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NotificationProvider>().markAllAsRead();
     });
@@ -25,17 +24,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<NotificationProvider>();
     final notifications = provider.notifications;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      
       appBar: AppBar(
         title: const Text('Notifications'),
-        
         elevation: 0,
         actions: [
           if (notifications.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.clear_all, color: Colors.white54),
+              icon: Icon(
+                Icons.clear_all,
+                color: colorScheme.onSurface.withValues(alpha: 0.54),
+              ),
               onPressed: () => provider.clearAll(),
               tooltip: 'Clear all',
             ),
@@ -46,20 +47,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.notifications_off_outlined,
                     size: 64,
-                    color: Colors.white30,
+                    color: colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'No notifications yet',
-                    style: TextStyle(color: Colors.white70, fontSize: 18),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontSize: 18,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Payment notifications will appear here',
-                    style: TextStyle(color: Colors.white38, fontSize: 14),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.38),
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
@@ -91,7 +98,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           Icon(
                             Icons.notifications_active,
                             color: isRead
-                                ? Colors.white54
+                                ? colorScheme.onSurface.withValues(alpha: 0.54)
                                 : AppTheme.accentBlue,
                             size: 20,
                           ),
@@ -100,7 +107,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             child: Text(
                               notif['title'] ?? 'Notification',
                               style: TextStyle(
-                                color: isRead ? Colors.white70 : Colors.white,
+                                color: isRead
+                                    ? colorScheme.onSurface.withValues(
+                                        alpha: 0.7,
+                                      )
+                                    : colorScheme.onSurface,
                                 fontWeight: isRead
                                     ? FontWeight.normal
                                     : FontWeight.w600,
@@ -110,8 +121,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           ),
                           Text(
                             notif['time'] ?? '',
-                            style: const TextStyle(
-                              color: Colors.white38,
+                            style: TextStyle(
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.38,
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -121,7 +134,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       Text(
                         notif['body'] ?? '',
                         style: TextStyle(
-                          color: isRead ? Colors.white54 : Colors.white70,
+                          color: isRead
+                              ? colorScheme.onSurface.withValues(alpha: 0.54)
+                              : colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ],

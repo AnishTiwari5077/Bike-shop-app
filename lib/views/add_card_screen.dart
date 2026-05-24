@@ -1,4 +1,5 @@
 import 'package:bike_shop/config/theme.dart';
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/viewmodels/payment_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -74,12 +75,16 @@ class _AddCardScreenState extends State<AddCardScreen> {
     if (success) {
       Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('Card added successfully!'),
+              Icon(
+                Icons.check_circle,
+                color: Theme.of(context).colorScheme.onPrimary,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              const Text('Card added successfully!'),
             ],
           ),
           backgroundColor: Colors.green,
@@ -91,7 +96,11 @@ class _AddCardScreenState extends State<AddCardScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error_outline, color: Colors.white, size: 18),
+              Icon(
+                Icons.error_outline,
+                color: Theme.of(context).colorScheme.onError,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Expanded(child: Text(provider.error ?? 'Failed to add card.')),
             ],
@@ -109,7 +118,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
     if (cleaned.length < 13 || cleaned.length > 19) {
       return 'Enter a valid card number';
     }
-    // Optional Luhn check
     if (!_luhnCheck(cleaned)) return 'Invalid card number';
     return null;
   }
@@ -156,244 +164,270 @@ class _AddCardScreenState extends State<AddCardScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<PaymentProvider>();
     final isLoading = provider.isAddingCard;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      
-      appBar: AppBar(
-        title: const Text('Add New Card'),
-        
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Add New Card'), elevation: 0),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
+          constraints: const BoxConstraints(maxWidth: 600),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Info banner
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentBlue.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.accentBlue.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.lock_outline,
-                      color: AppTheme.accentBlue,
-                      size: 20,
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Your card details are encrypted and sent directly to Stripe. We never store them.',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
+            padding: EdgeInsets.symmetric(
+              horizontal: Responsive.horizontalPadding(context),
+              vertical: 20,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Info banner
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppTheme.accentBlue.withValues(alpha: 0.3),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              // Card number
-              const Text(
-                'Card Number',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _cardNumberController,
-                onChanged: _onCardNumberChanged,
-                validator: _validateCardNumber,
-                keyboardType: TextInputType.number,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: '1234 5678 9012 3456',
-                  hintStyle: const TextStyle(color: Colors.white38),
-                  prefixIcon: const Icon(
-                    Icons.credit_card,
-                    color: Colors.white54,
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).cardColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.red),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Expiry & CVC row
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        const Text(
-                          'Expiry (MM/YY)',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        const Icon(
+                          Icons.lock_outline,
+                          color: AppTheme.accentBlue,
+                          size: 20,
                         ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _expiryController,
-                          onChanged: _onExpiryChanged,
-                          validator: _validateExpiry,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'MM/YY',
-                            hintStyle: const TextStyle(color: Colors.white38),
-                            filled: true,
-                            fillColor: Theme.of(context).cardColor,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Your card details are encrypted and sent directly to Stripe. We never store them.',
+                            style: TextStyle(
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
+                              fontSize: 13,
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'CVC',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _cvcController,
-                          validator: _validateCvc,
-                          keyboardType: TextInputType.number,
-                          obscureText: true,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: '123',
-                            hintStyle: const TextStyle(color: Colors.white38),
-                            filled: true,
-                            fillColor: Theme.of(context).cardColor,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 28),
+
+                  // Card number
+                  Text(
+                    'Card Number',
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Accepted cards
-              const Text(
-                'Accepted Cards',
-                style: TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  _brandBadge('VISA', const Color(0xFF1A1F71)),
-                  const SizedBox(width: 10),
-                  _brandBadge('MC', const Color(0xFFEB001B)),
-                  const SizedBox(width: 10),
-                  _brandBadge('AMEX', const Color(0xFF007BC1)),
-                ],
-              ),
-              const SizedBox(height: 40),
-
-              // Save button
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : _saveCard,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accentBlue,
-                    disabledBackgroundColor: Colors.white12,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _cardNumberController,
+                    onChanged: _onCardNumberChanged,
+                    validator: _validateCardNumber,
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(color: colorScheme.onSurface),
+                    decoration: InputDecoration(
+                      hintText: '1234 5678 9012 3456',
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withValues(alpha: 0.38),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.credit_card,
+                        color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).cardColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.red),
+                      ),
                     ),
                   ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                  const SizedBox(height: 16),
+
+                  // Expiry & CVC row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.add_card, color: Colors.white, size: 20),
-                            SizedBox(width: 10),
                             Text(
-                              'Save Card',
+                              'Expiry (MM/YY)',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: colorScheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _expiryController,
+                              onChanged: _onExpiryChanged,
+                              validator: _validateExpiry,
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(color: colorScheme.onSurface),
+                              decoration: InputDecoration(
+                                hintText: 'MM/YY',
+                                hintStyle: TextStyle(
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.38,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context).cardColor,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
-                ),
-              ),
-              const SizedBox(height: 16),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'CVC',
+                              style: TextStyle(
+                                color: colorScheme.onSurface,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _cvcController,
+                              validator: _validateCvc,
+                              keyboardType: TextInputType.number,
+                              obscureText: true,
+                              style: TextStyle(color: colorScheme.onSurface),
+                              decoration: InputDecoration(
+                                hintText: '123',
+                                hintStyle: TextStyle(
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.38,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context).cardColor,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
 
-              // Cancel button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () => Navigator.pop(context, false),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white54,
-                    side: const BorderSide(color: Colors.white24),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                  // Accepted cards
+                  Text(
+                    'Accepted Cards',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      fontSize: 13,
                     ),
                   ),
-                  child: const Text('Cancel'),
-                ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _brandBadge('VISA', const Color(0xFF1A1F71)),
+                      const SizedBox(width: 10),
+                      _brandBadge('MC', const Color(0xFFEB001B)),
+                      const SizedBox(width: 10),
+                      _brandBadge('AMEX', const Color(0xFF007BC1)),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Save button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : _saveCard,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.accentBlue,
+                        disabledBackgroundColor: colorScheme.onSurface
+                            .withValues(alpha: 0.12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_card,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  'Save Card',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Cancel button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () => Navigator.pop(context, false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.onSurface.withValues(
+                          alpha: 0.54,
+                        ),
+                        side: BorderSide(
+                          color: colorScheme.onSurface.withValues(alpha: 0.24),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
         ),
       ),
     );

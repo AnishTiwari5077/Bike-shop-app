@@ -35,14 +35,15 @@ class _OrdersScreenState extends State<OrdersScreen>
     final ordersProvider = context.watch<OrdersProvider>();
 
     return Scaffold(
-      
       appBar: AppBar(
         title: const Text('My Orders'),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppTheme.accentBlue,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white54,
+          labelColor: Theme.of(context).colorScheme.onSurface,
+          unselectedLabelColor: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.54),
           tabs: [
             Tab(text: 'Active (${ordersProvider.activeOrders.length})'),
             Tab(text: 'Completed (${ordersProvider.completedOrders.length})'),
@@ -60,6 +61,7 @@ class _OrdersScreenState extends State<OrdersScreen>
   }
 
   Widget _buildOrdersList(List<Order> orders, {required bool isActive}) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (orders.isEmpty) {
       return Center(
         child: Column(
@@ -68,12 +70,15 @@ class _OrdersScreenState extends State<OrdersScreen>
             Icon(
               isActive ? Icons.inbox_outlined : Icons.check_circle_outline,
               size: 64,
-              color: Colors.white30,
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               isActive ? 'No active orders' : 'No completed orders',
-              style: const TextStyle(color: Colors.white70, fontSize: 18),
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 18,
+              ),
             ),
           ],
         ),
@@ -92,15 +97,18 @@ class _OrdersScreenState extends State<OrdersScreen>
 
   Widget _buildOrderCard(Order order) {
     final isPending = order.status == 'pending';
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        // Highlight unpaid orders
         border: isPending
-            ? Border.all(color: Colors.orange.withValues(alpha: 0.4), width: 1.5)
+            ? Border.all(
+                color: Colors.orange.withValues(alpha: 0.4),
+                width: 1.5,
+              )
             : null,
       ),
       child: InkWell(
@@ -114,14 +122,13 @@ class _OrdersScreenState extends State<OrdersScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header ───────────────────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Order #${order.id.substring(0, 8)}',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -130,19 +137,20 @@ class _OrdersScreenState extends State<OrdersScreen>
                 ],
               ),
               const SizedBox(height: 12),
-
-              // ── Date & amount ─────────────────────────────────────────
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.calendar_today,
                     size: 14,
-                    color: Colors.white54,
+                    color: colorScheme.onSurface.withValues(alpha: 0.54),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '${order.orderDate.day}/${order.orderDate.month}/${order.orderDate.year}',
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      fontSize: 12,
+                    ),
                   ),
                   const Spacer(),
                   Text(
@@ -158,13 +166,18 @@ class _OrdersScreenState extends State<OrdersScreen>
               const SizedBox(height: 8),
               Text(
                 '${order.items.length} item${order.items.length > 1 ? 's' : ''}',
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: 13,
+                ),
               ),
 
-              // ── Pay Now button (only for pending) ─────────────────────
               if (isPending) ...[
                 const SizedBox(height: 14),
-                const Divider(color: Colors.white12, height: 1),
+                Divider(
+                  color: colorScheme.onSurface.withValues(alpha: 0.12),
+                  height: 1,
+                ),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,

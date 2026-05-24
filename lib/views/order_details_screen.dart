@@ -1,3 +1,4 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/cart_items.dart';
 import 'package:bike_shop/models/order_model.dart';
@@ -11,40 +12,43 @@ class OrderDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       appBar: AppBar(title: Text('Order #${order.id.substring(0, 8)}')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
           child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatusSection(context),
-            const SizedBox(height: 24),
-            const Text(
-              'Order Items',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            padding: EdgeInsets.symmetric(
+              horizontal: Responsive.horizontalPadding(context),
+              vertical: 16,
             ),
-            const SizedBox(height: 12),
-            ...order.items.map((item) => _buildOrderItem(context, item)),
-            const SizedBox(height: 24),
-            _buildSummarySection(context),
-            const SizedBox(height: 100),
-          ],
-        ),
-      ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStatusSection(context),
+                const SizedBox(height: 24),
+                Text(
+                  'Order Items',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...order.items.map((item) => _buildOrderItem(context, item)),
+                const SizedBox(height: 24),
+                _buildSummarySection(context),
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildStatusSection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final statuses = ['Pending', 'Processing', 'Shipped', 'Delivered'];
     final currentIndex = statuses.indexWhere(
       (s) => s.toLowerCase() == order.status.toLowerCase(),
@@ -59,10 +63,10 @@ class OrderDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Order Status',
             style: TextStyle(
-              color: Colors.white,
+              color: colorScheme.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -84,7 +88,7 @@ class OrderDetailScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                           color: isCompleted
                               ? AppTheme.accentBlue
-                              : Colors.grey[700],
+                              : colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                         child: Icon(
                           isCompleted ? Icons.check : Icons.circle,
@@ -98,7 +102,7 @@ class OrderDetailScreen extends StatelessWidget {
                           height: 40,
                           color: isCompleted
                               ? AppTheme.accentBlue
-                              : Colors.grey[700],
+                              : colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                     ],
                   ),
@@ -113,8 +117,10 @@ class OrderDetailScreen extends StatelessWidget {
                             statuses[index],
                             style: TextStyle(
                               color: isCompleted
-                                  ? Colors.white
-                                  : Colors.white54,
+                                  ? colorScheme.onSurface
+                                  : colorScheme.onSurface.withValues(
+                                      alpha: 0.54,
+                                    ),
                               fontSize: 16,
                               fontWeight: isCompleted
                                   ? FontWeight.w600
@@ -135,6 +141,7 @@ class OrderDetailScreen extends StatelessWidget {
   }
 
   Widget _buildOrderItem(BuildContext context, CartItem item) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -148,7 +155,7 @@ class OrderDetailScreen extends StatelessWidget {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: Colors.grey[850],
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(8),
             ),
             child: ClipRRect(
@@ -163,8 +170,8 @@ class OrderDetailScreen extends StatelessWidget {
               children: [
                 Text(
                   item.product.title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -173,7 +180,10 @@ class OrderDetailScreen extends StatelessWidget {
                 ),
                 Text(
                   'Qty: ${item.quantity}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.54),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -192,6 +202,7 @@ class OrderDetailScreen extends StatelessWidget {
   }
 
   Widget _buildSummarySection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -201,23 +212,28 @@ class OrderDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Order Summary',
             style: TextStyle(
-              color: Colors.white,
+              color: colorScheme.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
           _buildSummaryRow(
+            context,
             'Subtotal',
             '\$${order.totalAmount.toStringAsFixed(2)}',
           ),
-          _buildSummaryRow('Shipping', 'Free'),
-          _buildSummaryRow('Tax', '\$0.00'),
-          const Divider(color: Colors.white24, height: 24),
+          _buildSummaryRow(context, 'Shipping', 'Free'),
+          _buildSummaryRow(context, 'Tax', '\$0.00'),
+          Divider(
+            color: colorScheme.onSurface.withValues(alpha: 0.24),
+            height: 24,
+          ),
           _buildSummaryRow(
+            context,
             'Total',
             '\$${order.totalAmount.toStringAsFixed(2)}',
             isTotal: true,
@@ -227,7 +243,13 @@ class OrderDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+  Widget _buildSummaryRow(
+    BuildContext context,
+    String label,
+    String value, {
+    bool isTotal = false,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -236,7 +258,9 @@ class OrderDetailScreen extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: isTotal ? Colors.white : Colors.white70,
+              color: isTotal
+                  ? colorScheme.onSurface
+                  : colorScheme.onSurface.withValues(alpha: 0.7),
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
             ),
@@ -244,7 +268,9 @@ class OrderDetailScreen extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: isTotal ? Colors.white : Colors.white70,
+              color: isTotal
+                  ? colorScheme.onSurface
+                  : colorScheme.onSurface.withValues(alpha: 0.7),
               fontSize: isTotal ? 18 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
             ),
