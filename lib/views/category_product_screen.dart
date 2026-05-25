@@ -1,12 +1,15 @@
-// screens/category_products_screen.dart
+// lib/views/category_product_screen.dart
+// MVVM fix: all slug→category mapping removed from View.
+// The View asks ProductViewModel for the filtered list — no business logic here.
+// Removed all print() statements (View should not log business data).
+
 import 'package:bike_shop/config/responsive.dart';
+import 'package:bike_shop/config/theme.dart';
+import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/viewmodels/product_viewmodel.dart';
-import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../config/theme.dart';
-import '../models/product_model.dart';
 
 class CategoryProductsScreen extends StatelessWidget {
   final String categorySlug;
@@ -18,51 +21,15 @@ class CategoryProductsScreen extends StatelessWidget {
     required this.categoryName,
   });
 
-  // Map display category to actual product category/ies
-  List<String> _getProductCategories(String slug) {
-    switch (slug) {
-      case 'bikes':
-        // Bikes should show ALL bike types: road, mountain, electric, hybrid
-        return ['road', 'mountain', 'electric', 'hybrid'];
-      case 'gear':
-        return ['accessories'];
-      case 'mountain':
-        return ['mountain'];
-      case 'road':
-        return ['road'];
-      case 'electric':
-        return ['electric'];
-      case 'hybrid':
-        return ['hybrid'];
-      case 'all':
-        return []; // Empty means show all
-      default:
-        return [slug];
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final productsProvider = context.watch<ProductsProvider>();
+    final vm = context.watch<ProductsProvider>();
 
-    // Get the actual product categories for filtering
-    final productCategories = _getProductCategories(categorySlug);
-
-    // Filter products based on mapped categories
-    final categoryProducts = productCategories.isEmpty
-        ? productsProvider
-              .products // Show all products for 'all' category
-        : productsProvider.products
-              .where((product) => productCategories.contains(product.category))
-              .toList();
-
-    // Debug output
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    print('📱 CategoryProductsScreen:');
-    print('   Display: $categoryName (slug: $categorySlug)');
-    print('   Looking for categories: $productCategories');
-    print('   Products found: ${categoryProducts.length}');
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    // Delegate all filtering logic to the ViewModel — pure MVVM.
+    final cats = ProductViewModel.productCategoriesFor(categorySlug);
+    final categoryProducts = cats.isEmpty
+        ? vm.products
+        : vm.products.where((p) => cats.contains(p.category)).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -73,40 +40,7 @@ class CategoryProductsScreen extends StatelessWidget {
         ),
       ),
       body: categoryProducts.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.category_outlined,
-                    size: 64,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No products in $categoryName',
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.54),
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Looking for: ${productCategories.join(", ")}',
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.38),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            )
+          ? _buildEmpty(context, categoryName)
           : GridView.builder(
               padding: EdgeInsets.symmetric(
                 horizontal: Responsive.horizontalPadding(context),
@@ -137,18 +71,39 @@ class CategoryProductsScreen extends StatelessWidget {
             ),
     );
   }
+
+  Widget _buildEmpty(BuildContext context, String name) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.category_outlined,
+            size: 64,
+            color: cs.onSurface.withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No products in $name',
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.54),
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// Product card widget – identical in style to your home screen grid
 class _CategoryProductCard extends StatelessWidget {
   final Product product;
-
   const _CategoryProductCard({required this.product});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => context.push('/product', extra: product),
       child: Container(
@@ -159,7 +114,6 @@ class _CategoryProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product image
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
@@ -170,26 +124,25 @@ class _CategoryProductCard extends StatelessWidget {
                   product.imageUrl,
                   fit: BoxFit.cover,
                   width: double.infinity,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
                     return Container(
-                      color: colorScheme.onSurface.withValues(alpha: 0.1),
+                      color: cs.onSurface.withValues(alpha: 0.1),
                       child: const Center(
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     );
                   },
                   errorBuilder: (_, __, ___) => Container(
-                    color: colorScheme.onSurface.withValues(alpha: 0.1),
+                    color: cs.onSurface.withValues(alpha: 0.1),
                     child: Icon(
                       Icons.image_not_supported,
-                      color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      color: cs.onSurface.withValues(alpha: 0.54),
                     ),
                   ),
                 ),
               ),
             ),
-            // Product info
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -198,7 +151,7 @@ class _CategoryProductCard extends StatelessWidget {
                   Text(
                     product.title,
                     style: TextStyle(
-                      color: colorScheme.onSurface,
+                      color: cs.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -208,7 +161,7 @@ class _CategoryProductCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '\$${product.price.toStringAsFixed(2)}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.accentBlue,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

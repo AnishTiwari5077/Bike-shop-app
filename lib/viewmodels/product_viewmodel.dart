@@ -1,54 +1,70 @@
-// lib/providers/product_viewmodel.dart
-// ---------------------------------------------------------------------------
-// ProductViewModel — migrated from ProductsProvider to MVVM pattern.
-//
-// IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/product_viewmodel.dart'
-// All existing screens continue to import from this path without modification.
-//
-// Changes from original:
-//   - Extends BaseViewModel instead of using `with ChangeNotifier`
-//   - Uses base class setLoading() / setSuccess() / setError() / setIdle()
-//   - Removes duplicate _isLoading/_error fields (managed by base class)
-//   - Adds backward-compatible `error` getter alias for _errorMessage
-// ---------------------------------------------------------------------------
+// lib/viewmodels/product_viewmodel.dart
+// MVVM fix: category slug mapping belongs in the ViewModel, not the View.
+// All screens call setCategory(slug) and read displayedProducts — no mapping
+// logic anywhere in the widget tree.
 
 import 'package:bike_shop/core/base_viewmodel.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:flutter/material.dart';
 import 'package:bike_shop/services/product_service.dart';
 
-/// ViewModel for product listing, search, filtering, and detail fetching.
-///
-/// Consumed by ExploreScreen, HomeScreen, ProductDetailsScreen, WishListScreen.
-/// Access via `context.watch<ProductViewModel>()` or `context.read<ProductViewModel>()`.
 class ProductViewModel extends BaseViewModel {
   List<Product> _products = [];
   String _searchQuery = '';
   String _selectedCategory = 'all';
 
-  // ── Getters ───────────────────────────────────────────────────────────────
-
   List<Product> get products => _products;
-
-  /// Backward-compatible alias for [errorMessage] from BaseViewModel.
   String? get error => errorMessage;
-
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
 
-  /// Client-side filter — used by ProductGrid, WishListScreen, ExploreScreen.
+  /// Maps a UI category slug to the list of product category strings stored
+  /// in the database.  Lives here (ViewModel) — never in a View.
+  static List<String> productCategoriesFor(String slug) {
+    switch (slug) {
+      case 'all':
+        return []; // empty = show all
+      case 'bike':
+      case 'bikes':
+        // The home category row uses 'bike'; the explore screen may use 'bikes'.
+        // Both mean: any pedal-powered vehicle.
+        return ['road', 'mountain', 'hybrid'];
+      case 'electric':
+        return ['electric'];
+      case 'mountain':
+        return ['mountain'];
+      case 'road':
+        return ['road'];
+      case 'hybrid':
+        return ['hybrid'];
+      case 'accessories':
+      case 'gear':
+        return ['accessories'];
+      default:
+        // Fallback: treat the slug itself as a category string.
+        return [slug];
+    }
+  }
+
+  /// Products visible on the home screen grid, filtered by search + category.
   List<Product> get displayedProducts {
-    return _products.where((product) {
+    final cats = productCategoriesFor(_selectedCategory);
+    return _products.where((p) {
       final matchesSearch =
-          product.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          product.subtitle.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesCategory =
-          _selectedCategory == 'all' || product.category == _selectedCategory;
+          _searchQuery.isEmpty ||
+          p.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          p.subtitle.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesCategory = cats.isEmpty || cats.contains(p.category);
       return matchesSearch && matchesCategory;
     }).toList();
   }
 
-  // ── Actions ───────────────────────────────────────────────────────────────
+  /// Product count for a given slug — used by ExploreScreen categories tab.
+  int productCountFor(String slug) {
+    final cats = productCategoriesFor(slug);
+    if (cats.isEmpty) return _products.length;
+    return _products.where((p) => cats.contains(p.category)).length;
+  }
 
   void setSearchQuery(String query) {
     _searchQuery = query;
@@ -60,10 +76,8 @@ class ProductViewModel extends BaseViewModel {
     notifyListeners();
   }
 
-  // ── Load products from MongoDB via API ────────────────────────────────────
   Future<void> loadProducts() async {
     setLoading();
-
     try {
       _products = await ProductService.instance.fetchProducts();
       setSuccess();
@@ -74,18 +88,12 @@ class ProductViewModel extends BaseViewModel {
     }
   }
 
-  Future<void> refreshProducts() async {
-    await loadProducts();
-  }
+  Future<void> refreshProducts() async => loadProducts();
 
-  // ── Fetch a single product by Mongo ID ───────────────────────────────────
   Future<Product?> fetchProductById(String id) async {
-    // Return from cache if already loaded
     try {
       return _products.firstWhere((p) => p.id == id);
     } catch (_) {}
-
-    // Otherwise fetch from API
     try {
       return await ProductService.instance.fetchById(id);
     } catch (e) {
@@ -94,7 +102,6 @@ class ProductViewModel extends BaseViewModel {
     return null;
   }
 
-  /// Synchronous cache lookup — used where an async call isn't possible.
   Product? getProductById(String id) {
     try {
       return _products.firstWhere((p) => p.id == id);
@@ -104,7 +111,4 @@ class ProductViewModel extends BaseViewModel {
   }
 }
 
-// ─── Backward-compatibility alias ────────────────────────────────────────────
-// Existing screens that reference `ProductsProvider` by name (not type-safe
-// generic access) continue to compile. New code should use `ProductViewModel`.
 typedef ProductsProvider = ProductViewModel;

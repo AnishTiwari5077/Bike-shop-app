@@ -69,6 +69,14 @@ class _ExploreScreenState extends State<ExploreScreen>
 }
 
 // ==================== CATEGORIES TAB (FULLY FIXED) ====================
+// lib/views/explore_screen.dart  ← replace only the CategoriesTab class.
+// MVVM fix: product count now comes from ProductViewModel.productCountFor(slug)
+// instead of being computed inside the View.
+// Navigation slug mapping also removed from View — ViewModel owns the truth.
+
+// ==================== CATEGORIES TAB (MVVM-clean) ====================
+// Replace your existing CategoriesTab class with this one.
+
 class CategoriesTab extends StatefulWidget {
   const CategoriesTab({super.key});
 
@@ -85,66 +93,28 @@ class _CategoriesTabState extends State<CategoriesTab> {
     });
   }
 
-  // Helper method to get product count for a category
-  int _getProductCount(Category cat, List<Product> products) {
-    switch (cat.slug) {
-      case 'all':
-        return products.length;
-      case 'bikes':
-        // Bikes count = all road + mountain + electric + hybrid
-        return products
-            .where(
-              (p) =>
-                  p.category == 'road' ||
-                  p.category == 'mountain' ||
-                  p.category == 'electric' ||
-                  p.category == 'hybrid',
-            )
-            .length;
-      case 'gear':
-        return products.where((p) => p.category == 'accessories').length;
-      default:
-        return products.where((p) => p.category == cat.slug).length;
-    }
-  }
-
-  // Helper method to get the actual product category slug for navigation
-  String _getNavigationSlug(Category cat) {
-    switch (cat.slug) {
-      case 'bikes':
-        return 'bikes'; // Will be handled by CategoryProductsScreen
-      case 'gear':
-        return 'gear'; // Will be handled by CategoryProductsScreen
-      default:
-        return cat.slug;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final categoryViewModel = context.watch<CategoryViewModel>();
-    final productsProvider = context.watch<ProductsProvider>();
+    final categoryVM = context.watch<CategoryViewModel>();
+    final productVM = context.watch<ProductsProvider>();
 
-    if (categoryViewModel.isLoading) {
+    if (categoryVM.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppTheme.accentBlue),
       );
     }
 
-    if (categoryViewModel.error != null) {
+    if (categoryVM.error != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
-            Text(
-              categoryViewModel.error!,
-              style: const TextStyle(color: Colors.red),
-            ),
+            Text(categoryVM.error!, style: const TextStyle(color: Colors.red)),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => categoryViewModel.loadCategories(),
+              onPressed: categoryVM.loadCategories,
               child: const Text('Retry'),
             ),
           ],
@@ -152,7 +122,7 @@ class _CategoriesTabState extends State<CategoriesTab> {
       );
     }
 
-    if (categoryViewModel.categories.isEmpty) {
+    if (categoryVM.categories.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -169,7 +139,7 @@ class _CategoriesTabState extends State<CategoriesTab> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => categoryViewModel.loadCategories(),
+              onPressed: categoryVM.loadCategories,
               child: const Text('Refresh'),
             ),
           ],
@@ -177,13 +147,12 @@ class _CategoriesTabState extends State<CategoriesTab> {
       );
     }
 
-    // Filter categories to show (exclude new-arrival and deals from categories tab)
-    final displayCategories = categoryViewModel.categories.where((cat) {
-      return cat.slug != 'new-arrival' && cat.slug != 'deals';
-    }).toList();
+    final displayCategories = categoryVM.categories
+        .where((cat) => cat.slug != 'new-arrival' && cat.slug != 'deals')
+        .toList();
 
     return RefreshIndicator(
-      onRefresh: () => categoryViewModel.loadCategories(),
+      onRefresh: categoryVM.loadCategories,
       color: AppTheme.accentBlue,
       child: ListView.builder(
         padding: EdgeInsets.symmetric(
@@ -194,7 +163,9 @@ class _CategoriesTabState extends State<CategoriesTab> {
         itemCount: displayCategories.length,
         itemBuilder: (context, index) {
           final cat = displayCategories[index];
-          final productCount = _getProductCount(cat, productsProvider.products);
+
+          // ── MVVM: ask ViewModel for the count, no mapping logic here ──
+          final productCount = productVM.productCountFor(cat.slug);
 
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -213,12 +184,9 @@ class _CategoriesTabState extends State<CategoriesTab> {
               contentPadding: const EdgeInsets.all(12),
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Container(
+                child: SizedBox(
                   width: 60,
                   height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
                   child: _buildCategoryImage(cat),
                 ),
               ),
@@ -247,11 +215,10 @@ class _CategoriesTabState extends State<CategoriesTab> {
                 size: 16,
               ),
               onTap: () {
-                final navigationSlug = _getNavigationSlug(cat);
-                print('🖱️ Tapped: ${cat.name} -> slug: $navigationSlug');
+                // Pass the category slug directly — screen asks ViewModel to map it.
                 context.push(
                   '/category',
-                  extra: {'slug': navigationSlug, 'name': cat.name},
+                  extra: {'slug': cat.slug, 'name': cat.name},
                 );
               },
             ),
@@ -268,24 +235,16 @@ class _CategoriesTabState extends State<CategoriesTab> {
         width: 60,
         height: 60,
         fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return _buildIconFallback(cat);
-        },
-        errorBuilder: (context, error, stackTrace) {
-          print('❌ Failed to load image for ${cat.name}: $error');
-          return _buildIconFallback(cat);
-        },
+        loadingBuilder: (context, child, progress) =>
+            progress == null ? child : _buildIconFallback(cat),
+        errorBuilder: (_, __, ___) => _buildIconFallback(cat),
       );
     }
-
-    print('⚠️ No imageUrl for ${cat.name}, using fallback');
     return _buildIconFallback(cat);
   }
 
   Widget _buildIconFallback(Category cat) {
-    final iconData = _getIconData(cat.icon);
-    final color = _getColorFromHex(cat.color);
+    final color = _colorFromHex(cat.color);
     return Container(
       width: 60,
       height: 60,
@@ -297,12 +256,12 @@ class _CategoriesTabState extends State<CategoriesTab> {
         ),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(iconData, color: Colors.white, size: 30),
+      child: Icon(_iconData(cat.icon), color: Colors.white, size: 30),
     );
   }
 
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
+  IconData _iconData(String name) {
+    switch (name) {
       case 'terrain':
         return Icons.terrain;
       case 'directions_bike':
@@ -315,16 +274,20 @@ class _CategoriesTabState extends State<CategoriesTab> {
         return Icons.apps;
       case 'pedal_bike':
         return Icons.pedal_bike;
+      case 'electric_bike':
+        return Icons.electric_bike;
+      case 'sports_motorsports':
+        return Icons.sports_motorsports;
+      case 'settings':
+        return Icons.settings;
       default:
         return Icons.category;
     }
   }
 
-  Color _getColorFromHex(String hexColor) {
-    hexColor = hexColor.replaceAll('#', '');
-    if (hexColor.length == 6) {
-      return Color(int.parse('0xFF$hexColor'));
-    }
+  Color _colorFromHex(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) return Color(int.parse('0xFF$hex'));
     return AppTheme.accentBlue;
   }
 }
