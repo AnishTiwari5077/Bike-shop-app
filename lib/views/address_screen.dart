@@ -11,7 +11,6 @@ class AddressesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AddressProvider>();
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('My Addresses')),

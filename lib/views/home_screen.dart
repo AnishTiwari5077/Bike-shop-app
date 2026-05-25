@@ -5,6 +5,7 @@ import 'package:bike_shop/views/cart_screen.dart';
 import 'package:bike_shop/views/notification_screen.dart';
 import 'package:bike_shop/widgets/home_content.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -25,12 +26,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.shopping_cart_outlined),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CartScreen()),
-                  );
-                },
+                onPressed: () => context.push('/cart'),
               ),
               if (cart.itemCount > 0)
                 Positioned(
@@ -64,14 +60,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const NotificationsScreen(),
-                    ),
-                  );
-                },
+                onPressed: () => context.push('/notifications'),
               ),
               if (unreadCount > 0)
                 Positioned(

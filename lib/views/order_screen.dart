@@ -2,9 +2,8 @@ import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/viewmodels/order_viewmodel.dart';
-import 'package:bike_shop/views/checkout_screen.dart';
-import 'package:bike_shop/views/order_details_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -112,10 +111,8 @@ class _OrdersScreenState extends State<OrdersScreen>
             : null,
       ),
       child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => OrderDetailScreen(order: order)),
-        ),
+        // FIX 1: was Navigator.push(OrderDetailScreen) — now GoRouter
+        onTap: () => context.push('/order-detail', extra: order),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -183,24 +180,22 @@ class _OrdersScreenState extends State<OrdersScreen>
                   width: double.infinity,
                   height: 44,
                   child: ElevatedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CheckoutScreen(
-                          order: order,
-                          onPaymentComplete: () => Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const OrdersScreen(),
-                            ),
-                          ),
-                        ),
-                      ),
+                    // FIX 2 & 3: was two nested Navigator calls
+                    // (push CheckoutScreen + pushReplacement OrdersScreen inside callback).
+                    // Now: push /checkout via GoRouter; onPaymentComplete uses
+                    // context.pushReplacement so the back stack is clean.
+                    onPressed: () => context.push(
+                      '/checkout',
+                      extra: {
+                        'order': order,
+                        'onPaymentComplete': () =>
+                            context.pushReplacement('/orders'),
+                      },
                     ),
                     icon: const Icon(Icons.lock_outline, size: 16),
                     label: Text(
                       'Pay Now — \$${order.totalAmount.toStringAsFixed(2)}',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.accentBlue,

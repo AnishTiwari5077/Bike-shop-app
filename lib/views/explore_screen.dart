@@ -8,6 +8,7 @@ import 'package:bike_shop/views/category_product_screen.dart';
 import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:bike_shop/widgets/search_model.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -36,7 +37,6 @@ class _ExploreScreenState extends State<ExploreScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       appBar: AppBar(
         title: const Text('Explore'),
         actions: [
@@ -49,7 +49,9 @@ class _ExploreScreenState extends State<ExploreScreen>
           controller: _tabController,
           indicatorColor: AppTheme.accentBlue,
           labelColor: Theme.of(context).colorScheme.onSurface,
-          unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+          unselectedLabelColor: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.54),
           tabs: const [
             Tab(text: 'Categories'),
             Tab(text: 'Deals'),
@@ -84,7 +86,11 @@ class CategoriesTab extends StatelessWidget {
       return Center(
         child: Text(
           'No categories found',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
+          style: TextStyle(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.54),
+          ),
         ),
       );
     }
@@ -134,24 +140,24 @@ class CategoriesTab extends StatelessWidget {
             ),
             subtitle: Text(
               '$productCount products',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13),
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.54),
+                fontSize: 13,
+              ),
             ),
             trailing: Icon(
               Icons.arrow_forward_ios,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.54),
               size: 16,
             ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CategoryProductsScreen(
-                    categorySlug: cat.slug,
-                    categoryName: cat.name,
-                  ),
-                ),
-              );
-            },
+            onTap: () => context.push(
+              '/category',
+              extra: {'slug': cat.slug, 'name': cat.name},
+            ),
           ),
         );
       },
@@ -284,10 +290,16 @@ class DealsTab extends StatelessWidget {
               tablet: 0.78,
               desktop: 0.80,
             ),
-            crossAxisSpacing:
-                Responsive.value(context, mobile: 12.0, tablet: 16.0),
-            mainAxisSpacing:
-                Responsive.value(context, mobile: 12.0, tablet: 16.0),
+            crossAxisSpacing: Responsive.value(
+              context,
+              mobile: 12.0,
+              tablet: 16.0,
+            ),
+            mainAxisSpacing: Responsive.value(
+              context,
+              mobile: 12.0,
+              tablet: 16.0,
+            ),
           ),
           itemCount: deals.length,
           itemBuilder: (context, index) {
@@ -303,14 +315,8 @@ class DealsTab extends StatelessWidget {
     final discount = (20 + (product.id.hashCode % 40));
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(product: product),
-          ),
-        );
-      },
+      onTap: () => context.push('/product', extra: product),
+
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
@@ -368,7 +374,9 @@ class DealsTab extends StatelessWidget {
                           Text(
                             '\$${(product.price * 1.5).toStringAsFixed(2)}',
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.38),
                               fontSize: 12,
                               decoration: TextDecoration.lineThrough,
                             ),
@@ -507,7 +515,9 @@ class NewArrivalsTab extends StatelessWidget {
                     Text(
                       product.subtitle,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                       maxLines: 1,
@@ -528,7 +538,9 @@ class NewArrivalsTab extends StatelessWidget {
               IconButton(
                 icon: Icon(
                   Icons.add_shopping_cart,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 onPressed: () {
                   context.read<CartProvider>().addToCart(product);

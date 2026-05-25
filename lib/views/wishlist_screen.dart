@@ -10,6 +10,7 @@ import 'package:bike_shop/viewmodels/favorites_viewmodel.dart';
 import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class WishListScreen extends StatelessWidget {
@@ -143,14 +144,7 @@ class WishListScreen extends StatelessWidget {
       ),
       onDismissed: (_) => favorites.toggleFavorite(product.id),
       child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProductDetailScreen(product: product),
-            ),
-          );
-        },
+        onTap: () => context.push('/product', extra: product),
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
