@@ -10,6 +10,7 @@ import 'package:bike_shop/core/base_viewmodel.dart';
 import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/services/notification_service.dart';
 import 'package:bike_shop/viewmodels/auth_viewmodel.dart';
+import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
 import 'package:bike_shop/viewmodels/notification_viewmodel.dart';
 import 'package:bike_shop/viewmodels/order_viewmodel.dart';
 import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
@@ -18,6 +19,23 @@ import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 ///
 /// Consumed by CheckoutScreen. Removes business logic from the View.
 class CheckoutViewModel extends BaseViewModel {
+  /// Orchestrates order creation and cart clearing.
+  /// Spawns the domain [Order] object and persists it using [orderVM].
+  Future<Order> createOrder(CartViewModel cart, OrderViewModel orderVM) async {
+    setLoading();
+    final order = Order(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      items: List.from(cart.cartItems),
+      totalAmount: cart.finalAmount,
+      orderDate: DateTime.now(),
+      status: OrderStatus.pending,
+    );
+    orderVM.addOrder(order);
+    cart.clearCart();
+    setSuccess();
+    return order;
+  }
+
   /// Processes payment for [order] using [paymentMethodId].
   ///
   /// Delegates to [paymentVM], then updates order status, fires notifications
@@ -43,18 +61,18 @@ class CheckoutViewModel extends BaseViewModel {
 
     if (result.isSuccess) {
       // ── Update order status ──────────────────────────────────────────────
-      orderVM.updateOrderStatus(order.id, 'delivered');
+      orderVM.updateOrderStatus(order.id, OrderStatus.delivered);
 
       // ── Add to in-app notification list ─────────────────────────────────
       notificationVM.addNotification(
         'Payment Successful',
-        'Order #${order.id.substring(0, 8)} — \$${(order.totalAmount * 1.08).toStringAsFixed(2)} charged.',
+        'Order #${order.id.substring(0, 8)} — \$${order.totalWithTax.toStringAsFixed(2)} charged.',
       );
 
       // ── Push notification ────────────────────────────────────────────────
       await NotificationService.instance.showPaymentSuccessNotification(
         orderId: order.id,
-        amount: order.totalAmount * 1.08,
+        amount: order.totalWithTax,
       );
 
       // ── Email confirmation ───────────────────────────────────────────────
@@ -63,7 +81,7 @@ class CheckoutViewModel extends BaseViewModel {
           email: authVM.email,
           name: authVM.displayName,
           orderId: order.id,
-          amount: order.totalAmount * 1.08,
+          amount: order.totalWithTax,
           items: order.items
               .map(
                 (i) => {

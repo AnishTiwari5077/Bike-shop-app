@@ -51,7 +51,7 @@ class OrderDetailScreen extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final statuses = ['Pending', 'Processing', 'Shipped', 'Delivered'];
     final currentIndex = statuses.indexWhere(
-      (s) => s.toLowerCase() == order.status.toLowerCase(),
+      (s) => s.toLowerCase() == order.status.nameStr,
     );
 
     return Container(

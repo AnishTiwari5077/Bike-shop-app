@@ -63,7 +63,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ---------------- IMAGE (Responsive Height) ----------------
-              Container(
+              SizedBox(
                 height: Responsive.value(
                   context,
                   mobile: 130.0,

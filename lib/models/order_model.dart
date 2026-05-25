@@ -1,13 +1,44 @@
 import 'package:bike_shop/models/cart_items.dart';
 import 'package:bike_shop/models/product_model.dart';
 
+enum OrderStatus {
+  pending,
+  processing,
+  shipped,
+  delivered,
+  cancelled;
+
+  static OrderStatus fromString(String value) {
+    switch (value.toLowerCase().trim()) {
+      case 'pending':
+        return OrderStatus.pending;
+      case 'processing':
+        return OrderStatus.processing;
+      case 'shipped':
+        return OrderStatus.shipped;
+      case 'delivered':
+        return OrderStatus.delivered;
+      case 'cancelled':
+        return OrderStatus.cancelled;
+      default:
+        return OrderStatus.pending;
+    }
+  }
+
+  String get nameStr => name;
+}
+
 class Order {
   final String id;
   final List<CartItem> items;
   final double totalAmount;
   final DateTime orderDate;
-  final String status; // pending, processing, shipped, delivered, cancelled
+  final OrderStatus status; // pending, processing, shipped, delivered, cancelled
   final String? trackingNumber;
+
+  static const double taxRate = 0.08;
+  double get taxAmount => totalAmount * taxRate;
+  double get totalWithTax => totalAmount + taxAmount;
 
   Order({
     required this.id,
@@ -33,7 +64,7 @@ class Order {
       }).toList(),
       'totalAmount': totalAmount,
       'orderDate': orderDate.toIso8601String(),
-      'status': status,
+      'status': status.nameStr,
       'trackingNumber': trackingNumber,
     };
   }
@@ -61,7 +92,7 @@ class Order {
       items: itemsList,
       totalAmount: (map['totalAmount'] as num).toDouble(),
       orderDate: DateTime.parse(map['orderDate']),
-      status: map['status'].toString().toLowerCase().trim(),
+      status: OrderStatus.fromString(map['status'] ?? 'pending'),
       trackingNumber: map['trackingNumber'],
     );
   }

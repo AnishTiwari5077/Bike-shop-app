@@ -31,12 +31,12 @@ class OrderViewModel extends BaseViewModel {
   List<Order> get orders => [..._orders];
 
   List<Order> get activeOrders => _orders.where((order) {
-    final s = order.status.toLowerCase().trim();
-    return s != 'delivered' && s != 'cancelled';
+    return order.status != OrderStatus.delivered &&
+        order.status != OrderStatus.cancelled;
   }).toList();
 
   List<Order> get completedOrders => _orders
-      .where((order) => order.status.toLowerCase().trim() == 'delivered')
+      .where((order) => order.status == OrderStatus.delivered)
       .toList();
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ class OrderViewModel extends BaseViewModel {
     }
   }
 
-  void updateOrderStatus(String orderId, String newStatus) {
+  void updateOrderStatus(String orderId, OrderStatus newStatus) {
     final index = _orders.indexWhere((order) => order.id == orderId);
     if (index != -1) {
       final oldOrder = _orders[index];
@@ -64,7 +64,7 @@ class OrderViewModel extends BaseViewModel {
         items: oldOrder.items,
         totalAmount: oldOrder.totalAmount,
         orderDate: oldOrder.orderDate,
-        status: newStatus.toLowerCase().trim(),
+        status: newStatus,
         trackingNumber: oldOrder.trackingNumber,
       );
       _saveOrders();

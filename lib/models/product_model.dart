@@ -27,6 +27,8 @@ class Product {
     this.isNewArrival, // 👈 ADDED
   });
 
+  int get discountPercentage => 20 + (id.hashCode % 40);
+
   factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
       id: map['id'] ?? '',

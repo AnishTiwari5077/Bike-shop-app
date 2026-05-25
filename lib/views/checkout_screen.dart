@@ -109,31 +109,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _addCard(PaymentProvider provider) async {
     final authProvider = context.read<AuthProvider>();
 
-    if (!authProvider.isSignedIn) {
+    if (!provider.checkCanAddCard(authProvider.isSignedIn)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.person_outline, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('Please sign in first to add a card.'),
+              const Icon(Icons.error_outline, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(child: Text(provider.error ?? 'Cannot add card.')),
             ],
           ),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
       );
-      return;
-    }
-
-    if (!provider.isInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not connect to payment service.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      provider.clearError();
       return;
     }
 
@@ -265,7 +255,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
       bottomNavigationBar: _PayButton(
-        amount: widget.order.totalAmount,
+        order: widget.order,
         isEnabled: _selectedCardId != null && !checkoutVM.isLoading,
         isLoading: checkoutVM.isLoading,
         onPay: _pay,
@@ -303,7 +293,7 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        if (trailing != null) trailing!,
+        ?trailing,
       ],
     );
   }
@@ -569,8 +559,8 @@ class _PriceBreakdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final subtotal = order.totalAmount;
-    final tax = subtotal * 0.08;
-    final total = subtotal + tax;
+    final tax = order.taxAmount;
+    final total = order.totalWithTax;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -659,12 +649,12 @@ class _PriceBreakdown extends StatelessWidget {
 }
 
 class _PayButton extends StatelessWidget {
-  final double amount;
+  final Order order;
   final bool isEnabled;
   final bool isLoading;
   final VoidCallback onPay;
   const _PayButton({
-    required this.amount,
+    required this.order,
     required this.isEnabled,
     required this.isLoading,
     required this.onPay,
@@ -673,8 +663,7 @@ class _PayButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final tax = amount * 0.08;
-    final total = amount + tax;
+    final total = order.totalWithTax;
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,

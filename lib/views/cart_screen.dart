@@ -10,6 +10,7 @@ import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/cart_items.dart';
 import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
+import 'package:bike_shop/viewmodels/checkout_viewmodel.dart';
 import 'package:bike_shop/viewmodels/order_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -30,50 +31,45 @@ class _CartScreenState extends State<CartScreen> {
   Future<void> _processCheckout(BuildContext context) async {
     final cart = context.read<CartProvider>();
     final ordersProvider = context.read<OrdersProvider>();
+    final checkoutVM = context.read<CheckoutViewModel>();
 
     if (cart.isEmpty) return;
 
-    final newOrder = await cart.checkout();
-    ordersProvider.addOrder(newOrder);
+    await checkoutVM.createOrder(cart, ordersProvider);
 
-    if (mounted) {
-      final colorScheme = Theme.of(context).colorScheme;
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: Theme.of(context).cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 28),
-              const SizedBox(width: 12),
-              Text(
-                'Order Placed!',
-                style: TextStyle(color: colorScheme.onSurface),
-              ),
-            ],
-          ),
-          content: Text(
-            'Your order has been successfully placed.',
-            style: TextStyle(
-              color: colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // GoRouter: replaces the dialog + CartScreen with OrdersScreen
-                context.push('/orders');
-              },
-              child: const Text('View Orders'),
+    if (!mounted) return;
+    final colorScheme = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Theme.of(dialogContext).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 28),
+            const SizedBox(width: 12),
+            Text(
+              'Order Placed!',
+              style: TextStyle(color: colorScheme.onSurface),
             ),
           ],
         ),
-      );
-    }
+        content: Text(
+          'Your order has been successfully placed.',
+          style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              // GoRouter: replaces the dialog + CartScreen with OrdersScreen
+              context.push('/orders');
+            },
+            child: const Text('View Orders'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

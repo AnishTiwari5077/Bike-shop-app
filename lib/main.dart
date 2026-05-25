@@ -118,17 +118,23 @@ class BikeShopApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => FavoritesViewModel()),
         ChangeNotifierProvider(create: (_) => OrderViewModel()),
         ChangeNotifierProvider(create: (_) => AddressViewModel()),
-        // ── PaymentViewModel auto-initializes when AuthViewModel signs in ───
+        // ── PaymentViewModel auto-initializes when AuthViewModel signs in and resets on sign-out ───
         ChangeNotifierProxyProvider<AuthViewModel, PaymentViewModel>(
           create: (_) => PaymentViewModel(),
           update: (_, auth, payment) {
-            if (auth.isSignedIn &&
-                payment != null &&
-                !payment.isInitialized) {
-              payment.initialize(
-                email: auth.email,
-                name: auth.displayName,
-              );
+            if (payment != null) {
+              if (auth.isSignedIn) {
+                if (!payment.isInitialized) {
+                  payment.initialize(
+                    email: auth.email,
+                    name: auth.displayName,
+                  );
+                }
+              } else {
+                if (payment.isInitialized) {
+                  payment.reset();
+                }
+              }
             }
             return payment!;
           },

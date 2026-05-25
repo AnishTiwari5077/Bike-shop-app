@@ -13,21 +13,25 @@ import 'package:bike_shop/views/payment_screen.dart';
 import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:bike_shop/views/address_screen.dart';
 import 'package:bike_shop/views/wishlist_screen.dart';
+import 'package:bike_shop/views/settings/notifications_settings_screen.dart';
+import 'package:bike_shop/views/settings/privacy_security_screen.dart';
+import 'package:bike_shop/views/settings/help_support_screen.dart';
+import 'package:bike_shop/views/settings/about_screen.dart';
 import 'package:go_router/go_router.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/', builder: (_, __) => const MainScreen()),
-    GoRoute(path: '/cart', builder: (_, __) => const CartScreen()),
-    GoRoute(path: '/orders', builder: (_, __) => const OrdersScreen()),
+    GoRoute(path: '/', builder: (context, _) => const MainScreen()),
+    GoRoute(path: '/cart', builder: (context, _) => const CartScreen()),
+    GoRoute(path: '/orders', builder: (context, _) => const OrdersScreen()),
     GoRoute(
       path: '/notifications',
-      builder: (_, __) => const NotificationsScreen(),
+      builder: (context, _) => const NotificationsScreen(),
     ),
-    GoRoute(path: '/wishlist', builder: (_, __) => const WishListScreen()),
-    GoRoute(path: '/addresses', builder: (_, __) => const AddressesScreen()),
-    GoRoute(path: '/payment', builder: (_, __) => const PaymentMethodsScreen()),
+    GoRoute(path: '/wishlist', builder: (context, _) => const WishListScreen()),
+    GoRoute(path: '/addresses', builder: (context, _) => const AddressesScreen()),
+    GoRoute(path: '/payment', builder: (context, _) => const PaymentMethodsScreen()),
     GoRoute(
       path: '/product',
       builder: (_, state) =>
@@ -57,5 +61,22 @@ final appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(
+      path: '/settings/notifications',
+      builder: (context, _) => const NotificationsSettingsScreen(),
+    ),
+    GoRoute(
+      path: '/settings/privacy',
+      builder: (context, _) => const PrivacySecurityScreen(),
+    ),
+    GoRoute(
+      path: '/settings/support',
+      builder: (context, _) => const HelpSupportScreen(),
+    ),
+    GoRoute(
+      path: '/settings/about',
+      builder: (context, _) => const AboutScreen(),
+    ),
   ],
 );
+

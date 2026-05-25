@@ -2,13 +2,6 @@ import 'package:bike_shop/viewmodels/auth_viewmodel.dart';
 import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
 import 'package:bike_shop/viewmodels/favorites_viewmodel.dart';
 import 'package:bike_shop/viewmodels/order_viewmodel.dart';
-import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
-import 'package:bike_shop/views/address_screen.dart';
-import 'package:bike_shop/views/order_screen.dart';
-import 'package:bike_shop/views/payment_screen.dart';
-import 'package:bike_shop/views/wishlist_screen.dart';
-// Fixed: import corrected filename (wishlist_screen instead of whilist_screen)
-
 import 'package:flutter/material.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/config/responsive.dart';
@@ -16,118 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:bike_shop/viewmodels/theme_viewmodel.dart';
 
-// ============================================================================
-// Placeholder screens for Settings
-// ============================================================================
-class NotificationsSettingsScreen extends StatelessWidget {
-  const NotificationsSettingsScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
-      body: Center(
-        child: Text(
-          'Notification settings will be here',
-          style: TextStyle(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.54),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class PrivacySecurityScreen extends StatelessWidget {
-  const PrivacySecurityScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Privacy & Security')),
-      body: Center(
-        child: Text(
-          'Privacy & security options will be here',
-          style: TextStyle(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.54),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class HelpSupportScreen extends StatelessWidget {
-  const HelpSupportScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Help & Support')),
-      body: Center(
-        child: Text(
-          'FAQ and support options will be here',
-          style: TextStyle(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.54),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class AboutScreen extends StatelessWidget {
-  const AboutScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('About')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.bike_scooter,
-              size: 80,
-              color: AppTheme.accentBlue,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Bike Shop App',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Version 1.0.0',
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.54),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '© 2025 Bike Shop',
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.54),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// Settings screens migrated to separate files inside views/settings/
 
 // ============================================================================
 // Main Profile Screen
@@ -409,48 +291,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.notifications_outlined,
                         title: 'Notifications',
                         subtitle: 'Manage notifications',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const NotificationsSettingsScreen(),
-                          ),
-                        ),
+                        onTap: () => context.push('/settings/notifications'),
                       ),
                       _buildMenuItem(
                         context,
                         icon: Icons.privacy_tip_outlined,
                         title: 'Privacy & Security',
                         subtitle: 'Manage your privacy',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PrivacySecurityScreen(),
-                          ),
-                        ),
+                        onTap: () => context.push('/settings/privacy'),
                       ),
                       _buildMenuItem(
                         context,
                         icon: Icons.help_outline,
                         title: 'Help & Support',
                         subtitle: 'Get help and support',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const HelpSupportScreen(),
-                          ),
-                        ),
+                        onTap: () => context.push('/settings/support'),
                       ),
                       _buildMenuItem(
                         context,
                         icon: Icons.info_outline,
                         title: 'About',
                         subtitle: 'App version 1.0.0',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AboutScreen(),
-                          ),
-                        ),
+                        onTap: () => context.push('/settings/about'),
                       ),
 
                       const SizedBox(height: 24),
@@ -498,7 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Image.network(
             auth.photoUrl,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _defaultAvatar(),
+            errorBuilder: (context, error, stackTrace) => _defaultAvatar(),
           ),
         ),
       );
@@ -741,7 +603,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
-              context.read<PaymentProvider>().reset();
               await auth.signOut();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
