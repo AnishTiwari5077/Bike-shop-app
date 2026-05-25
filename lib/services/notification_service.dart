@@ -1,5 +1,6 @@
 import 'dart:convert';
 //import 'package:firebase_core/firebase_core.dart';
+import 'package:bike_shop/config/api_config.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -15,8 +16,8 @@ class NotificationService {
 
   // ⚠️ IMPORTANT: Change this to your computer's actual local IP address
   // (run `ipconfig` on Windows or `ifconfig` on Mac/Linux)
-  static const String _baseUrl = 'http://192.168.1.6:3000';
-
+  // static const String _baseUrl = ApiConfig.baseUrl; static const String _baseUrl = 'http://192.168.1.6:3000';
+  static const String _baseUrl = ApiConfig.baseUrl;
   Future<void> initialize() async {
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
 
