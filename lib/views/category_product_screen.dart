@@ -18,12 +18,51 @@ class CategoryProductsScreen extends StatelessWidget {
     required this.categoryName,
   });
 
+  // Map display category to actual product category/ies
+  List<String> _getProductCategories(String slug) {
+    switch (slug) {
+      case 'bikes':
+        // Bikes should show ALL bike types: road, mountain, electric, hybrid
+        return ['road', 'mountain', 'electric', 'hybrid'];
+      case 'gear':
+        return ['accessories'];
+      case 'mountain':
+        return ['mountain'];
+      case 'road':
+        return ['road'];
+      case 'electric':
+        return ['electric'];
+      case 'hybrid':
+        return ['hybrid'];
+      case 'all':
+        return []; // Empty means show all
+      default:
+        return [slug];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsProvider = context.watch<ProductsProvider>();
-    final categoryProducts = productsProvider.products
-        .where((product) => product.category == categorySlug)
-        .toList();
+
+    // Get the actual product categories for filtering
+    final productCategories = _getProductCategories(categorySlug);
+
+    // Filter products based on mapped categories
+    final categoryProducts = productCategories.isEmpty
+        ? productsProvider
+              .products // Show all products for 'all' category
+        : productsProvider.products
+              .where((product) => productCategories.contains(product.category))
+              .toList();
+
+    // Debug output
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('📱 CategoryProductsScreen:');
+    print('   Display: $categoryName (slug: $categorySlug)');
+    print('   Looking for categories: $productCategories');
+    print('   Products found: ${categoryProducts.length}');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return Scaffold(
       appBar: AppBar(
@@ -35,13 +74,37 @@ class CategoryProductsScreen extends StatelessWidget {
       ),
       body: categoryProducts.isEmpty
           ? Center(
-              child: Text(
-                'No products in this category',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.54),
-                ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.category_outlined,
+                    size: 64,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No products in $categoryName',
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.54),
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Looking for: ${productCategories.join(", ")}',
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.38),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             )
           : GridView.builder(
@@ -84,6 +147,8 @@ class _CategoryProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () => context.push('/product', extra: product),
       child: Container(
@@ -105,13 +170,20 @@ class _CategoryProductCard extends StatelessWidget {
                   product.imageUrl,
                   fit: BoxFit.cover,
                   width: double.infinity,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: colorScheme.onSurface.withValues(alpha: 0.1),
+                      child: const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    );
+                  },
                   errorBuilder: (_, __, ___) => Container(
-                    color: Theme.of(context).cardColor,
+                    color: colorScheme.onSurface.withValues(alpha: 0.1),
                     child: Icon(
                       Icons.image_not_supported,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.54),
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
                     ),
                   ),
                 ),
@@ -126,7 +198,7 @@ class _CategoryProductCard extends StatelessWidget {
                   Text(
                     product.title,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: colorScheme.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),

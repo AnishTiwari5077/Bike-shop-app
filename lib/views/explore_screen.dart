@@ -69,132 +69,218 @@ class _ExploreScreenState extends State<ExploreScreen>
 }
 
 // ==================== CATEGORIES TAB (FULLY FIXED) ====================
-class CategoriesTab extends StatelessWidget {
+class CategoriesTab extends StatefulWidget {
   const CategoriesTab({super.key});
 
-  // Map category slug to actual product category
-  String _getProductCategory(String categorySlug) {
-    switch (categorySlug) {
-      case 'gear':
-        return 'accessories'; // Gear category shows accessories products
-      case 'mountain':
-        return 'mountain'; // Mountain category shows mountain products
-      case 'road':
-        return 'road'; // Road category shows road products
-      case 'electric':
-        return 'electric'; // Electric category shows electric products
-      case 'hybrid':
-        return 'hybrid'; // Hybrid category shows hybrid products
+  @override
+  State<CategoriesTab> createState() => _CategoriesTabState();
+}
+
+class _CategoriesTabState extends State<CategoriesTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CategoryViewModel>().loadCategories();
+    });
+  }
+
+  // Helper method to get product count for a category
+  int _getProductCount(Category cat, List<Product> products) {
+    switch (cat.slug) {
       case 'all':
-        return 'all'; // All category shows all products
+        return products.length;
+      case 'bikes':
+        // Bikes count = all road + mountain + electric + hybrid
+        return products
+            .where(
+              (p) =>
+                  p.category == 'road' ||
+                  p.category == 'mountain' ||
+                  p.category == 'electric' ||
+                  p.category == 'hybrid',
+            )
+            .length;
+      case 'gear':
+        return products.where((p) => p.category == 'accessories').length;
       default:
-        return categorySlug; // For any other category
+        return products.where((p) => p.category == cat.slug).length;
+    }
+  }
+
+  // Helper method to get the actual product category slug for navigation
+  String _getNavigationSlug(Category cat) {
+    switch (cat.slug) {
+      case 'bikes':
+        return 'bikes'; // Will be handled by CategoryProductsScreen
+      case 'gear':
+        return 'gear'; // Will be handled by CategoryProductsScreen
+      default:
+        return cat.slug;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final categoryProvider = context.watch<CategoryProvider>();
+    final categoryViewModel = context.watch<CategoryViewModel>();
     final productsProvider = context.watch<ProductsProvider>();
 
-    if (categoryProvider.isLoading) {
+    if (categoryViewModel.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppTheme.accentBlue),
       );
     }
-    if (categoryProvider.categories.isEmpty) {
+
+    if (categoryViewModel.error != null) {
       return Center(
-        child: Text(
-          'No categories found',
-          style: TextStyle(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.54),
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              categoryViewModel.error!,
+              style: const TextStyle(color: Colors.red),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => categoryViewModel.loadCategories(),
+              child: const Text('Retry'),
+            ),
+          ],
         ),
       );
     }
 
-    // Filter categories to only show relevant ones (exclude new-arrival and deals from categories tab)
-    final displayCategories = categoryProvider.categories.where((cat) {
-      return cat.slug != 'new-arrival' && cat.slug != 'deals';
-    }).toList();
-
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: Responsive.horizontalPadding(context),
-        vertical: 16,
-      ),
-      itemCount: displayCategories.length,
-      itemBuilder: (context, index) {
-        final cat = displayCategories[index];
-
-        // Get the correct product category for counting
-        final productCategory = _getProductCategory(cat.slug);
-
-        // Calculate product count correctly
-        final productCount = productCategory == 'all'
-            ? productsProvider.products.length
-            : productsProvider.products
-                  .where((p) => p.category == productCategory)
-                  .length;
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(12),
-            leading: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: cat.imageUrl != null && cat.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      cat.imageUrl!,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildIconFallback(cat),
-                    )
-                  : _buildIconFallback(cat),
-            ),
-            title: Text(
-              cat.name,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            subtitle: Text(
-              '$productCount products',
+    if (categoryViewModel.categories.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.category_outlined, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              'No categories found',
               style: TextStyle(
                 color: Theme.of(
                   context,
                 ).colorScheme.onSurface.withValues(alpha: 0.54),
-                fontSize: 13,
               ),
             ),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.54),
-              size: 16,
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => categoryViewModel.loadCategories(),
+              child: const Text('Refresh'),
             ),
-            onTap: () {
-              // Pass the correct product category for filtering
-              final productCategory = _getProductCategory(cat.slug);
-              context.push(
-                '/category',
-                extra: {'slug': productCategory, 'name': cat.name},
-              );
-            },
-          ),
-        );
-      },
+          ],
+        ),
+      );
+    }
+
+    // Filter categories to show (exclude new-arrival and deals from categories tab)
+    final displayCategories = categoryViewModel.categories.where((cat) {
+      return cat.slug != 'new-arrival' && cat.slug != 'deals';
+    }).toList();
+
+    return RefreshIndicator(
+      onRefresh: () => categoryViewModel.loadCategories(),
+      color: AppTheme.accentBlue,
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(
+          horizontal: Responsive.horizontalPadding(context),
+          vertical: 16,
+        ),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: displayCategories.length,
+        itemBuilder: (context, index) {
+          final cat = displayCategories[index];
+          final productCount = _getProductCount(cat, productsProvider.products);
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(12),
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: _buildCategoryImage(cat),
+                ),
+              ),
+              title: Text(
+                cat.name,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                '$productCount products',
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.54),
+                  fontSize: 13,
+                ),
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.54),
+                size: 16,
+              ),
+              onTap: () {
+                final navigationSlug = _getNavigationSlug(cat);
+                print('🖱️ Tapped: ${cat.name} -> slug: $navigationSlug');
+                context.push(
+                  '/category',
+                  extra: {'slug': navigationSlug, 'name': cat.name},
+                );
+              },
+            ),
+          );
+        },
+      ),
     );
+  }
+
+  Widget _buildCategoryImage(Category cat) {
+    if (cat.imageUrl != null && cat.imageUrl!.isNotEmpty) {
+      return Image.network(
+        cat.imageUrl!,
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return _buildIconFallback(cat);
+        },
+        errorBuilder: (context, error, stackTrace) {
+          print('❌ Failed to load image for ${cat.name}: $error');
+          return _buildIconFallback(cat);
+        },
+      );
+    }
+
+    print('⚠️ No imageUrl for ${cat.name}, using fallback');
+    return _buildIconFallback(cat);
   }
 
   Widget _buildIconFallback(Category cat) {
@@ -225,18 +311,10 @@ class CategoriesTab extends StatelessWidget {
         return Icons.build;
       case 'bolt':
         return Icons.electric_bike;
-      case 'two_wheeler':
-        return Icons.two_wheeler;
       case 'apps':
         return Icons.apps;
       case 'pedal_bike':
         return Icons.pedal_bike;
-      case 'electric_bike':
-        return Icons.electric_bike;
-      case 'sports_motorsports':
-        return Icons.sports_motorsports;
-      case 'settings':
-        return Icons.settings;
       default:
         return Icons.category;
     }
@@ -251,7 +329,7 @@ class CategoriesTab extends StatelessWidget {
   }
 }
 
-// ==================== DEALS TAB (FIXED) ====================
+// ==================== DEALS TAB ====================
 class DealsTab extends StatelessWidget {
   const DealsTab({super.key});
 
@@ -295,7 +373,6 @@ class DealsTab extends StatelessWidget {
         vertical: 16,
       ),
       children: [
-        // Flash Sale Banner
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -495,7 +572,7 @@ class DealsTab extends StatelessWidget {
   }
 }
 
-// ==================== NEW ARRIVALS TAB (FIXED) ====================
+// ==================== NEW ARRIVALS TAB ====================
 class NewArrivalsTab extends StatelessWidget {
   const NewArrivalsTab({super.key});
 
@@ -558,9 +635,7 @@ class NewArrivalsTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
-        onTap: () {
-          context.push('/product', extra: product);
-        },
+        onTap: () => context.push('/product', extra: product),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(12),

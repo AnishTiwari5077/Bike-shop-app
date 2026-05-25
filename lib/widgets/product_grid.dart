@@ -50,8 +50,6 @@ class ProductGrid extends StatelessWidget {
       );
     }
 
-    // ✅ FIX: Use MediaQuery to detect large text scaling and shrink the ratio
-    // so the card always has enough vertical room regardless of font scale.
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
     final mobileRatio = textScale > 1.1 ? 0.60 : 0.70;
 
@@ -64,7 +62,6 @@ class ProductGrid extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: Responsive.gridColumns(context),
-          // ✅ FIX: ratio now adapts to the system text scale factor
           childAspectRatio: Responsive.value(
             context,
             mobile: mobileRatio,
@@ -92,6 +89,7 @@ class ProductGrid extends StatelessWidget {
             image: product.imageUrl,
             rating: product.rating,
             isFavorite: favoritesProvider.isFavorite(product.id),
+            isNetworkImage: true, // 👈 ADD THIS LINE - FIXES THE ISSUE!
             onTap: () {
               context.push('/product', extra: product);
             },
