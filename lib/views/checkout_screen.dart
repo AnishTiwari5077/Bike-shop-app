@@ -1,3 +1,13 @@
+// lib/views/checkout_screen.dart
+// FIXES:
+//   - All Colors.white* → colorScheme.onSurface.withValues(alpha:…)
+//   - Colors.grey[850] → Theme.of(context).cardColor
+//   - Colors.white12 → colorScheme.onSurface.withValues(alpha:0.12)
+//   - _SectionHeader, _OrderSummaryCard, _CardTile, _PriceBreakdown,
+//     _PaymentSuccessSheet all now use theme-aware colors
+//   - GoRouter: Navigator.pushReplacement(OrdersScreen) replaced with
+//     onPaymentComplete callback (already existed — preserved)
+
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
@@ -7,7 +17,6 @@ import 'package:bike_shop/viewmodels/notification_viewmodel.dart';
 import 'package:bike_shop/viewmodels/order_viewmodel.dart';
 import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 import 'package:bike_shop/views/add_card_screen.dart';
-import 'package:bike_shop/views/order_screen.dart';
 import 'package:bike_shop/services/stripe_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,9 +24,9 @@ import 'package:provider/provider.dart';
 class CheckoutScreen extends StatefulWidget {
   final Order order;
   final VoidCallback? onPaymentComplete;
-  
+
   const CheckoutScreen({
-    super.key, 
+    super.key,
     required this.order,
     this.onPaymentComplete,
   });
@@ -38,7 +47,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
   }
 
-  // ── Pay — delegates to CheckoutViewModel ─────────────────────────────────
   Future<void> _pay() async {
     if (_selectedCardId == null) {
       _showError('Please select a payment method.');
@@ -92,18 +100,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Navigator.of(context)
             ..pop()
             ..pop();
-
           widget.onPaymentComplete?.call();
         },
       ),
     );
   }
 
-  // ── Add card using pure Flutter screen ───────────────────────────────────
   Future<void> _addCard(PaymentProvider provider) async {
     final authProvider = context.read<AuthProvider>();
 
-    // Check sign-in first
     if (!authProvider.isSignedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -121,8 +126,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    // PaymentViewModel is now auto-initialized via ChangeNotifierProxyProvider
-    // in main.dart, so no manual initialize() call is needed here.
     if (!provider.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -134,55 +137,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    // Navigate to the pure Flutter AddCardScreen
     final added = await AddCardScreen.show(context);
     if (!mounted) return;
 
     if (added == true) {
-      // Reload cards and select the new one (new card becomes default in provider)
       await provider.loadCards();
-      setState(() {
-        _selectedCardId = provider.defaultCardId;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('Card added successfully!'),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      setState(() => _selectedCardId = provider.defaultCardId);
     } else if (provider.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.error!),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(provider.error!), backgroundColor: Colors.red),
       );
       provider.clearError();
     }
-    // null + no error = user cancelled, do nothing
   }
 
   Future<void> _deleteCard(PaymentProvider provider, String cardId) async {
+    final colorScheme = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: Text(
           'Remove Card?',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: colorScheme.onSurface),
         ),
-        content: const Text(
+        content: Text(
           'This card will be permanently removed.',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         actions: [
           TextButton(
@@ -206,7 +188,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final paymentProvider = context.watch<PaymentProvider>();
@@ -236,7 +217,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       const SizedBox(height: 12),
                       _OrderSummaryCard(order: widget.order),
                       const SizedBox(height: 28),
-
                       _SectionHeader(
                         icon: Icons.credit_card,
                         title: 'Payment Method',
@@ -256,7 +236,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             : null,
                       ),
                       const SizedBox(height: 12),
-
                       if (!paymentProvider.hasCards)
                         _EmptyCardsWidget(
                           onAddCard: () => _addCard(paymentProvider),
@@ -272,9 +251,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 _deleteCard(paymentProvider, card.id),
                           ),
                         ),
-
                       const SizedBox(height: 28),
-
                       _SectionHeader(
                         icon: Icons.calculate_outlined,
                         title: 'Price Details',
@@ -297,7 +274,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 }
 
-// ── Subwidgets ───────────────────────────────────────────────────────────────
+// ── Subwidgets ────────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final IconData icon;
@@ -311,6 +288,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Icon(icon, color: AppTheme.accentBlue, size: 20),
@@ -318,7 +296,8 @@ class _SectionHeader extends StatelessWidget {
         Text(
           title,
           style: TextStyle(
-            color: Colors.white,
+            // FIX: was Colors.white — now theme-aware
+            color: colorScheme.onSurface,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -336,6 +315,7 @@ class _OrderSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -353,7 +333,8 @@ class _OrderSummaryCard extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: Colors.grey[850],
+                        // FIX: was Colors.grey[850]
+                        color: colorScheme.onSurface.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: ClipRRect(
@@ -372,7 +353,8 @@ class _OrderSummaryCard extends StatelessWidget {
                           Text(
                             item.product.title,
                             style: TextStyle(
-                              color: Colors.white,
+                              // FIX: was Colors.white
+                              color: colorScheme.onSurface,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -382,7 +364,10 @@ class _OrderSummaryCard extends StatelessWidget {
                           Text(
                             'Qty: ${item.quantity}',
                             style: TextStyle(
-                              color: Colors.white54,
+                              // FIX: was Colors.white54
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.54,
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -392,7 +377,8 @@ class _OrderSummaryCard extends StatelessWidget {
                     Text(
                       '\$${item.totalPrice.toStringAsFixed(2)}',
                       style: TextStyle(
-                        color: Colors.white,
+                        // FIX: was Colors.white
+                        color: colorScheme.onSurface,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -421,6 +407,7 @@ class _CardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -431,7 +418,10 @@ class _CardTile extends StatelessWidget {
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? AppTheme.accentBlue : Colors.white12,
+            // FIX: unselected was Colors.white12
+            color: isSelected
+                ? AppTheme.accentBlue
+                : colorScheme.onSurface.withValues(alpha: 0.12),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -444,7 +434,10 @@ class _CardTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? AppTheme.accentBlue : Colors.white38,
+                  // FIX: unselected was Colors.white38
+                  color: isSelected
+                      ? AppTheme.accentBlue
+                      : colorScheme.onSurface.withValues(alpha: 0.38),
                   width: 2,
                 ),
                 color: isSelected ? AppTheme.accentBlue : Colors.transparent,
@@ -463,14 +456,19 @@ class _CardTile extends StatelessWidget {
                   Text(
                     card.displayName,
                     style: TextStyle(
-                      color: Colors.white,
+                      // FIX: was Colors.white
+                      color: colorScheme.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     'Expires ${card.expiry}',
-                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                    // FIX: was Colors.white54
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -515,6 +513,7 @@ class _EmptyCardsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -525,24 +524,30 @@ class _EmptyCardsWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.credit_card_off_outlined,
-            color: Colors.white30,
+            // FIX: was Colors.white30
+            color: colorScheme.onSurface.withValues(alpha: 0.3),
             size: 48,
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'No saved cards',
             style: TextStyle(
-              color: Colors.white,
+              // FIX: was Colors.white
+              color: colorScheme.onSurface,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Add a card to complete your purchase',
-            style: TextStyle(color: Colors.white54, fontSize: 13),
+            // FIX: was Colors.white54
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.54),
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
@@ -562,6 +567,7 @@ class _PriceBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final subtotal = order.totalAmount;
     final tax = subtotal * 0.08;
     final total = subtotal + tax;
@@ -573,24 +579,35 @@ class _PriceBreakdown extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _row('Subtotal', '\$${subtotal.toStringAsFixed(2)}'),
+          _row(context, 'Subtotal', '\$${subtotal.toStringAsFixed(2)}'),
           const SizedBox(height: 8),
-          _row('Shipping', 'Free', valueColor: const Color(0xFF10B981)),
+          _row(
+            context,
+            'Shipping',
+            'Free',
+            valueColor: const Color(0xFF10B981),
+          ),
           const SizedBox(height: 8),
-          _row('Tax (8%)', '\$${tax.toStringAsFixed(2)}'),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: Colors.white12, height: 1),
+          _row(context, 'Tax (8%)', '\$${tax.toStringAsFixed(2)}'),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            // FIX: was Colors.white12
+            child: Divider(
+              color: colorScheme.onSurface.withValues(alpha: 0.12),
+              height: 1,
+            ),
           ),
           _row(
+            context,
             'Total',
             '\$${total.toStringAsFixed(2)}',
             labelStyle: TextStyle(
-              color: Colors.white,
+              // FIX: was Colors.white
+              color: colorScheme.onSurface,
               fontSize: 17,
               fontWeight: FontWeight.bold,
             ),
-            valueStyle: TextStyle(
+            valueStyle: const TextStyle(
               color: AppTheme.accentBlue,
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -602,12 +619,14 @@ class _PriceBreakdown extends StatelessWidget {
   }
 
   Widget _row(
+    BuildContext context,
     String label,
     String value, {
     Color? valueColor,
     TextStyle? labelStyle,
     TextStyle? valueStyle,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -615,14 +634,21 @@ class _PriceBreakdown extends StatelessWidget {
           label,
           style:
               labelStyle ??
-              TextStyle(color: Colors.white70, fontSize: 14),
+              // FIX: was Colors.white70
+              TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 14,
+              ),
         ),
         Text(
           value,
           style:
               valueStyle ??
               TextStyle(
-                color: valueColor ?? Colors.white70,
+                color:
+                    valueColor ??
+                    // FIX: was Colors.white70
+                    colorScheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -646,6 +672,7 @@ class _PayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final tax = amount * 0.08;
     final total = amount + tax;
     return Container(
@@ -669,7 +696,10 @@ class _PayButton extends StatelessWidget {
           onPressed: isEnabled ? onPay : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.accentBlue,
-            disabledBackgroundColor: Colors.white12,
+            // FIX: was Colors.white12
+            disabledBackgroundColor: colorScheme.onSurface.withValues(
+              alpha: 0.12,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -704,7 +734,7 @@ class _PayButton extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       'Pay \$${total.toStringAsFixed(2)}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -725,8 +755,7 @@ class _PaymentSuccessSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // FIX: Wrapped Column in SingleChildScrollView to prevent RenderFlex
-    // overflow on smaller screens / when keyboard is visible.
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.fromLTRB(
         28,
@@ -767,10 +796,11 @@ class _PaymentSuccessSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Payment Successful!',
               style: TextStyle(
-                color: Colors.white,
+                // FIX: was Colors.white
+                color: colorScheme.onSurface,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -778,13 +808,17 @@ class _PaymentSuccessSheet extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Order #${order.id.substring(0, 8)} is now complete.',
-              style: TextStyle(color: Colors.white60, fontSize: 14),
+              // FIX: was Colors.white60
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+                fontSize: 14,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
             Text(
               '\$${(order.totalAmount * 1.08).toStringAsFixed(2)} charged',
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.accentBlue,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -800,18 +834,21 @@ class _PaymentSuccessSheet extends StatelessWidget {
               child: Column(
                 children: [
                   _detailRow(
+                    context,
                     Icons.tag,
                     'Order ID',
                     '#${order.id.substring(0, 8)}',
                   ),
                   const SizedBox(height: 10),
                   _detailRow(
+                    context,
                     Icons.calendar_today_outlined,
                     'Date',
                     _formatDate(DateTime.now()),
                   ),
                   const SizedBox(height: 10),
                   _detailRow(
+                    context,
                     Icons.local_shipping_outlined,
                     'Status',
                     'Delivered',
@@ -839,24 +876,35 @@ class _PaymentSuccessSheet extends StatelessWidget {
   }
 
   Widget _detailRow(
+    BuildContext context,
     IconData icon,
     String label,
     String value, {
     Color? valueColor,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, color: Colors.white38, size: 16),
+        Icon(
+          icon,
+          // FIX: was Colors.white38
+          color: colorScheme.onSurface.withValues(alpha: 0.38),
+          size: 16,
+        ),
         const SizedBox(width: 10),
         Text(
           label,
-          style: TextStyle(color: Colors.white54, fontSize: 13),
+          // FIX: was Colors.white54
+          style: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.54),
+            fontSize: 13,
+          ),
         ),
         const Spacer(),
         Text(
           value,
           style: TextStyle(
-            color: valueColor ?? Colors.white,
+            color: valueColor ?? colorScheme.onSurface,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),

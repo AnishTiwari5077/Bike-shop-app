@@ -1,3 +1,10 @@
+// lib/widgets/search_model.dart
+// FIXES:
+//   - All Colors.white* → colorScheme.onSurface.withValues(alpha:…)
+//   - Colors.grey[850] → Theme.of(context).cardColor
+//   - fillColor: Theme.of(context).scaffoldBackgroundColor → cardColor
+//   - ListTile text/icon colors now theme-aware
+
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/viewmodels/product_viewmodel.dart';
@@ -34,7 +41,6 @@ class _SearchModalState extends State<SearchModal> {
 
     setState(() => _isSearching = true);
 
-    // Simulate search delay
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
         final results = provider.products.where((product) {
@@ -54,40 +60,59 @@ class _SearchModalState extends State<SearchModal> {
   @override
   Widget build(BuildContext context) {
     final productsProvider = context.watch<ProductsProvider>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
       ),
       child: Column(
         children: [
-          // Header
+          // Drag handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colorScheme.onSurface.withValues(alpha: 0.24),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Search field row
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _searchController,
                     autofocus: true,
-                    style: TextStyle(color: Colors.white),
+                    // FIX: was Colors.white — now theme-aware
+                    style: TextStyle(color: colorScheme.onSurface),
                     decoration: InputDecoration(
                       hintText: 'Search bikes, helmets, accessories...',
-                      hintStyle: TextStyle(color: Colors.white54),
-                      prefixIcon: const Icon(
+                      // FIX: was Colors.white54
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      ),
+                      prefixIcon: Icon(
                         Icons.search,
-                        color: Colors.white70,
+                        // FIX: was Colors.white70
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.clear,
-                                color: Colors.white70,
+                                // FIX: was Colors.white70
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
+                                ),
                               ),
                               onPressed: () {
                                 _searchController.clear();
@@ -99,7 +124,9 @@ class _SearchModalState extends State<SearchModal> {
                             )
                           : null,
                       filled: true,
-                      fillColor: Theme.of(context).scaffoldBackgroundColor,
+                      // FIX: was Theme.of(context).scaffoldBackgroundColor
+                      // (which in light mode = off-white → invisible against white modal)
+                      fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -118,9 +145,11 @@ class _SearchModalState extends State<SearchModal> {
             ),
           ),
 
-          const Divider(color: Colors.white12, height: 1),
+          Divider(
+            color: colorScheme.onSurface.withValues(alpha: 0.12),
+            height: 1,
+          ),
 
-          // Search Results
           Expanded(child: _buildSearchContent(context)),
         ],
       ),
@@ -135,10 +164,11 @@ class _SearchModalState extends State<SearchModal> {
     }
 
     if (_searchController.text.isEmpty) {
-      return _buildRecentSearches();
+      return _buildRecentSearches(context);
     }
 
     if (_searchResults.isEmpty) {
+      final colorScheme = Theme.of(context).colorScheme;
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -146,18 +176,24 @@ class _SearchModalState extends State<SearchModal> {
             Icon(
               Icons.search_off,
               size: 64,
-              color: Colors.white.withValues(alpha: .3),
+              // FIX: was Colors.white.withValues(alpha:.3)
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No results found',
-              style: TextStyle(color: Colors.white70, fontSize: 18),
+              // FIX: was Colors.white70
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 18,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Try different keywords',
+              // FIX: was Colors.white.withValues(alpha:.5)
               style: TextStyle(
-                color: Colors.white.withValues(alpha: .5),
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
                 fontSize: 14,
               ),
             ),
@@ -169,14 +205,13 @@ class _SearchModalState extends State<SearchModal> {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final product = _searchResults[index];
-        return _buildSearchResultItem(context, product);
-      },
+      itemBuilder: (context, index) =>
+          _buildSearchResultItem(context, _searchResults[index]),
     );
   }
 
-  Widget _buildRecentSearches() {
+  Widget _buildRecentSearches(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final recentSearches = [
       'Mountain Bike',
       'Helmet',
@@ -187,12 +222,13 @@ class _SearchModalState extends State<SearchModal> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.all(20),
+        Padding(
+          padding: const EdgeInsets.all(20),
           child: Text(
             'Recent Searches',
             style: TextStyle(
-              color: Colors.white,
+              // FIX: was Colors.white
+              color: colorScheme.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -204,14 +240,20 @@ class _SearchModalState extends State<SearchModal> {
             itemCount: recentSearches.length,
             itemBuilder: (context, index) {
               return ListTile(
-                leading: const Icon(Icons.history, color: Colors.white54),
+                // FIX: icon and text use theme-aware colors
+                leading: Icon(
+                  Icons.history,
+                  color: colorScheme.onSurface.withValues(alpha: 0.54),
+                ),
                 title: Text(
                   recentSearches[index],
-                  style: TextStyle(color: Colors.white),
+                  // FIX: was Colors.white
+                  style: TextStyle(color: colorScheme.onSurface),
                 ),
-                trailing: const Icon(
+                trailing: Icon(
                   Icons.north_west,
-                  color: Colors.white54,
+                  // FIX: was Colors.white54
+                  color: colorScheme.onSurface.withValues(alpha: 0.54),
                   size: 20,
                 ),
                 onTap: () {
@@ -230,6 +272,7 @@ class _SearchModalState extends State<SearchModal> {
   }
 
   Widget _buildSearchResultItem(BuildContext context, Product product) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () {
         Navigator.pop(context);
@@ -244,7 +287,8 @@ class _SearchModalState extends State<SearchModal> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          // FIX: was Theme.of(context).scaffoldBackgroundColor
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -253,7 +297,8 @@ class _SearchModalState extends State<SearchModal> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: Colors.grey[850],
+                // FIX: was Colors.grey[850]
+                color: colorScheme.onSurface.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ClipRRect(
@@ -269,7 +314,8 @@ class _SearchModalState extends State<SearchModal> {
                   Text(
                     product.title,
                     style: TextStyle(
-                      color: Colors.white,
+                      // FIX: was Colors.white
+                      color: colorScheme.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -279,7 +325,11 @@ class _SearchModalState extends State<SearchModal> {
                   const SizedBox(height: 4),
                   Text(
                     product.subtitle,
-                    style: TextStyle(color: Colors.white60, fontSize: 13),
+                    // FIX: was Colors.white60
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 13,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -288,7 +338,7 @@ class _SearchModalState extends State<SearchModal> {
             ),
             Text(
               '\$${product.price.toStringAsFixed(2)}',
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppTheme.accentBlue,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
