@@ -1,3 +1,12 @@
+// lib/widgets/stepped_row_icon.dart
+// FIX: category ids now match actual product.category strings stored in DB.
+// 'bike' → shows road+mountain+hybrid  (mapped in ProductViewModel)
+// 'electric' → shows electric
+// 'mountain' → shows mountain
+// 'road' → shows road
+// 'accessories' → shows accessories
+// 'all' → shows everything
+
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +14,6 @@ import 'package:provider/provider.dart';
 
 class SteppedIconRow extends StatefulWidget {
   const SteppedIconRow({super.key});
-
   @override
   State<SteppedIconRow> createState() => _SteppedIconRowState();
 }
@@ -13,6 +21,9 @@ class SteppedIconRow extends StatefulWidget {
 class _SteppedIconRowState extends State<SteppedIconRow> {
   String _selectedCategory = 'all';
 
+  // IMPORTANT: 'id' values must match the keys handled by
+  // ProductViewModel.productCategoriesFor().  Never use raw product.category
+  // strings directly here — the mapping lives in the ViewModel.
   final List<Map<String, dynamic>> _categories = [
     {
       'id': 'all',
@@ -75,8 +86,10 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
             padding: const EdgeInsets.only(right: 16),
             child: GestureDetector(
               onTap: () {
-                setState(() => _selectedCategory = category['id']);
-                context.read<ProductsProvider>().setCategory(category['id']);
+                setState(() => _selectedCategory = category['id'] as String);
+                context.read<ProductsProvider>().setCategory(
+                  category['id'] as String,
+                );
               },
               child: Column(
                 children: [
@@ -102,7 +115,7 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                               colors: [
                                 category['color'] as Color,
                                 (category['color'] as Color).withValues(
-                                  alpha: .7,
+                                  alpha: 0.7,
                                 ),
                               ],
                             )
@@ -111,10 +124,12 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
-                            ? (category['color'] as Color).withValues(alpha: .5)
+                            ? (category['color'] as Color).withValues(
+                                alpha: 0.5,
+                              )
                             : Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withValues(alpha: .1),
+                              ).colorScheme.onSurface.withValues(alpha: 0.1),
                         width: isSelected ? 2 : 1,
                       ),
                       boxShadow: isSelected
