@@ -303,7 +303,7 @@ class _SearchModalState extends State<SearchModal> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset(product.imageUrl, fit: BoxFit.cover),
+                child: Image.network(product.imageUrl, fit: BoxFit.cover),
               ),
             ),
             const SizedBox(width: 12),

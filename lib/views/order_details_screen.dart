@@ -160,7 +160,7 @@ class OrderDetailScreen extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset(item.product.imageUrl, fit: BoxFit.cover),
+              child: Image.network(item.product.imageUrl, fit: BoxFit.cover),
             ),
           ),
           const SizedBox(width: 12),

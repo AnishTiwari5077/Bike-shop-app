@@ -1,5 +1,6 @@
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
+import 'package:bike_shop/models/category_model.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
 import 'package:bike_shop/viewmodels/category_viewmodel.dart';
@@ -67,10 +68,29 @@ class _ExploreScreenState extends State<ExploreScreen>
   }
 }
 
-//import 'package:bike_shop/viewmodels/category_viewmodel.dart';
-
+// ==================== CATEGORIES TAB (FULLY FIXED) ====================
 class CategoriesTab extends StatelessWidget {
   const CategoriesTab({super.key});
+
+  // Map category slug to actual product category
+  String _getProductCategory(String categorySlug) {
+    switch (categorySlug) {
+      case 'gear':
+        return 'accessories'; // Gear category shows accessories products
+      case 'mountain':
+        return 'mountain'; // Mountain category shows mountain products
+      case 'road':
+        return 'road'; // Road category shows road products
+      case 'electric':
+        return 'electric'; // Electric category shows electric products
+      case 'hybrid':
+        return 'hybrid'; // Hybrid category shows hybrid products
+      case 'all':
+        return 'all'; // All category shows all products
+      default:
+        return categorySlug; // For any other category
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,19 +115,29 @@ class CategoriesTab extends StatelessWidget {
       );
     }
 
+    // Filter categories to only show relevant ones (exclude new-arrival and deals from categories tab)
+    final displayCategories = categoryProvider.categories.where((cat) {
+      return cat.slug != 'new-arrival' && cat.slug != 'deals';
+    }).toList();
+
     return ListView.builder(
       padding: EdgeInsets.symmetric(
         horizontal: Responsive.horizontalPadding(context),
         vertical: 16,
       ),
-      itemCount: categoryProvider.categories.length,
+      itemCount: displayCategories.length,
       itemBuilder: (context, index) {
-        final cat = categoryProvider.categories[index];
-        final productCount = productsProvider.products
-            .where((p) => p.category == cat.slug)
-            .length;
-        final iconData = _getIconData(cat.icon);
-        final color = _getColorFromHex(cat.color);
+        final cat = displayCategories[index];
+
+        // Get the correct product category for counting
+        final productCategory = _getProductCategory(cat.slug);
+
+        // Calculate product count correctly
+        final productCount = productCategory == 'all'
+            ? productsProvider.products.length
+            : productsProvider.products
+                  .where((p) => p.category == productCategory)
+                  .length;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -116,19 +146,18 @@ class CategoriesTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [color, color.withValues(alpha: 0.6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(iconData, color: Colors.white, size: 30),
+            contentPadding: const EdgeInsets.all(12),
+            leading: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: cat.imageUrl != null && cat.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      cat.imageUrl!,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _buildIconFallback(cat),
+                    )
+                  : _buildIconFallback(cat),
             ),
             title: Text(
               cat.name,
@@ -154,20 +183,52 @@ class CategoriesTab extends StatelessWidget {
               ).colorScheme.onSurface.withValues(alpha: 0.54),
               size: 16,
             ),
-            onTap: () => context.push(
-              '/category',
-              extra: {'slug': cat.slug, 'name': cat.name},
-            ),
+            onTap: () {
+              // Pass the correct product category for filtering
+              final productCategory = _getProductCategory(cat.slug);
+              context.push(
+                '/category',
+                extra: {'slug': productCategory, 'name': cat.name},
+              );
+            },
           ),
         );
       },
     );
   }
 
+  Widget _buildIconFallback(Category cat) {
+    final iconData = _getIconData(cat.icon);
+    final color = _getColorFromHex(cat.color);
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, color.withValues(alpha: 0.6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(iconData, color: Colors.white, size: 30),
+    );
+  }
+
   IconData _getIconData(String iconName) {
     switch (iconName) {
+      case 'terrain':
+        return Icons.terrain;
+      case 'directions_bike':
+        return Icons.directions_bike;
+      case 'build':
+        return Icons.build;
+      case 'bolt':
+        return Icons.electric_bike;
       case 'two_wheeler':
         return Icons.two_wheeler;
+      case 'apps':
+        return Icons.apps;
       case 'pedal_bike':
         return Icons.pedal_bike;
       case 'electric_bike':
@@ -176,8 +237,6 @@ class CategoriesTab extends StatelessWidget {
         return Icons.sports_motorsports;
       case 'settings':
         return Icons.settings;
-      case 'build':
-        return Icons.build;
       default:
         return Icons.category;
     }
@@ -192,14 +251,43 @@ class CategoriesTab extends StatelessWidget {
   }
 }
 
-// Deals Tab
+// ==================== DEALS TAB (FIXED) ====================
 class DealsTab extends StatelessWidget {
   const DealsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     final productsProvider = context.watch<ProductsProvider>();
-    final deals = productsProvider.products.take(6).toList();
+    final deals = productsProvider.products
+        .where((p) => p.isDeal == true)
+        .toList();
+
+    if (deals.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.local_offer_outlined,
+              size: 64,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No deals available',
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.54),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return ListView(
       padding: EdgeInsets.symmetric(
@@ -267,18 +355,12 @@ class DealsTab extends StatelessWidget {
             ],
           ),
         ),
-
         const SizedBox(height: 24),
         const Text(
           'Hot Deals',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -313,10 +395,10 @@ class DealsTab extends StatelessWidget {
 
   Widget _buildDealCard(BuildContext context, Product product) {
     final discount = (20 + (product.id.hashCode % 40));
+    final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: () => context.push('/product', extra: product),
-
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
@@ -328,20 +410,19 @@ class DealsTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                      ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
                     ),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
+                    child: Image.network(
+                      product.imageUrl,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: colorScheme.onSurface.withValues(alpha: 0.1),
+                        child: const Icon(Icons.image_not_supported, size: 40),
                       ),
-                      child: Image.asset(product.imageUrl, fit: BoxFit.cover),
                     ),
                   ),
                 ),
@@ -353,7 +434,7 @@ class DealsTab extends StatelessWidget {
                       Text(
                         product.title,
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
+                          color: colorScheme.onSurface,
                           fontSize: 14,
                         ),
                         maxLines: 1,
@@ -364,7 +445,7 @@ class DealsTab extends StatelessWidget {
                         children: [
                           Text(
                             '\$${product.price.toStringAsFixed(2)}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: AppTheme.accentBlue,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -374,9 +455,9 @@ class DealsTab extends StatelessWidget {
                           Text(
                             '\$${(product.price * 1.5).toStringAsFixed(2)}',
                             style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.38),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.38,
+                              ),
                               fontSize: 12,
                               decoration: TextDecoration.lineThrough,
                             ),
@@ -388,7 +469,6 @@ class DealsTab extends StatelessWidget {
                 ),
               ],
             ),
-
             Positioned(
               top: 8,
               right: 8,
@@ -400,7 +480,7 @@ class DealsTab extends StatelessWidget {
                 ),
                 child: Text(
                   '-$discount%',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -415,14 +495,43 @@ class DealsTab extends StatelessWidget {
   }
 }
 
-// New Arrivals Tab
+// ==================== NEW ARRIVALS TAB (FIXED) ====================
 class NewArrivalsTab extends StatelessWidget {
   const NewArrivalsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     final productsProvider = context.watch<ProductsProvider>();
-    final newProducts = productsProvider.products.reversed.take(6).toList();
+    final newProducts = productsProvider.products
+        .where((p) => p.isNewArrival == true)
+        .toList();
+
+    if (newProducts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.new_releases_outlined,
+              size: 64,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No new arrivals',
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.54),
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return ListView(
       padding: EdgeInsets.symmetric(
@@ -432,11 +541,7 @@ class NewArrivalsTab extends StatelessWidget {
       children: [
         const Text(
           'Just Added',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         ...newProducts.map((product) => _buildNewArrivalCard(context, product)),
@@ -445,6 +550,7 @@ class NewArrivalsTab extends StatelessWidget {
   }
 
   Widget _buildNewArrivalCard(BuildContext context, Product product) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -453,28 +559,26 @@ class NewArrivalsTab extends StatelessWidget {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProductDetailScreen(product: product),
-            ),
-          );
+          context.push('/product', extra: product);
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(product.imageUrl, fit: BoxFit.cover),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  product.imageUrl,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 80,
+                    height: 80,
+                    color: colorScheme.onSurface.withValues(alpha: 0.1),
+                    child: const Icon(Icons.image_not_supported),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -504,7 +608,7 @@ class NewArrivalsTab extends StatelessWidget {
                     Text(
                       product.title,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: colorScheme.onSurface,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -515,9 +619,7 @@ class NewArrivalsTab extends StatelessWidget {
                     Text(
                       product.subtitle,
                       style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                       maxLines: 1,
@@ -526,7 +628,7 @@ class NewArrivalsTab extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       '\$${product.price.toStringAsFixed(2)}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppTheme.accentBlue,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -538,9 +640,7 @@ class NewArrivalsTab extends StatelessWidget {
               IconButton(
                 icon: Icon(
                   Icons.add_shopping_cart,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 onPressed: () {
                   context.read<CartProvider>().addToCart(product);

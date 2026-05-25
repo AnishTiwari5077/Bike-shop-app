@@ -5,6 +5,7 @@ class Category {
   final String icon;
   final String color;
   final int order;
+  final String? imageUrl; // 👈 ADDED
 
   Category({
     required this.id,
@@ -13,6 +14,7 @@ class Category {
     required this.icon,
     required this.color,
     required this.order,
+    this.imageUrl, // 👈 ADDED
   });
 
   factory Category.fromMap(Map<String, dynamic> map) {
@@ -23,6 +25,7 @@ class Category {
       icon: map['icon'] ?? 'category',
       color: map['color'] ?? '#3B82F6',
       order: map['order'] ?? 0,
+      imageUrl: map['imageUrl'], // 👈 ADDED
     );
   }
 }

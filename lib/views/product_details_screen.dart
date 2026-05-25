@@ -5,6 +5,7 @@
 //   - Removed import of cart_screen.dart (decoupled via GoRouter)
 //   - Quantity selector colours now use colorScheme so they're visible in light mode
 //   - image indicator dots: Colors.white → colorScheme.onSurface for light mode
+//   - Product images now use Image.network instead of Image.asset
 
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
@@ -53,25 +54,49 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             setState(() => _currentImageIndex = index),
                         itemBuilder: (context, index) {
                           return Container(
-                            // FIX: was Colors.grey[850] — now theme-aware
                             color: colorScheme.onSurface.withValues(
                               alpha: 0.08,
                             ),
-                            child: Image.asset(
+                            child: Image.network(
                               images[index],
                               fit: BoxFit.cover,
+
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                    if (loadingProgress == null) {
+                                      return child;
+                                    }
+
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        value:
+                                            loadingProgress
+                                                    .expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    );
+                                  },
+
                               errorBuilder: (context, error, stackTrace) =>
-                                  const Center(
+                                  Center(
                                     child: Icon(
                                       Icons.broken_image,
                                       size: 100,
-                                      color: Colors.white30,
+                                      color: colorScheme.onSurface.withValues(
+                                        alpha: 0.3,
+                                      ),
                                     ),
                                   ),
                             ),
                           );
                         },
                       ),
+
                       if (images.length > 1)
                         Positioned(
                           bottom: 16,
@@ -90,8 +115,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 decoration: BoxDecoration(
                                   color: _currentImageIndex == index
                                       ? Colors.white
-                                      // FIX: was Colors.white.withValues(alpha:.4)
-                                      // which in light mode → invisible on light bg
                                       : colorScheme.onSurface.withValues(
                                           alpha: 0.4,
                                         ),
@@ -123,6 +146,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                 ],
               ),
+
               SliverToBoxAdapter(
                 child: Container(
                   decoration: BoxDecoration(
@@ -145,7 +169,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+
                         const SizedBox(height: 8),
+
                         Text(
                           widget.product.title,
                           style: TextStyle(
@@ -154,7 +180,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+
                         const SizedBox(height: 12),
+
                         if (widget.product.rating != null)
                           Row(
                             children: [
@@ -163,7 +191,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 color: Colors.amber,
                                 size: 20,
                               ),
+
                               const SizedBox(width: 4),
+
                               Text(
                                 widget.product.rating!.toStringAsFixed(1),
                                 style: TextStyle(
@@ -172,7 +202,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
+
                               const SizedBox(width: 8),
+
                               Text(
                                 '(${(widget.product.rating! * 324).toInt()} reviews)',
                                 style: TextStyle(
@@ -184,7 +216,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                             ],
                           ),
+
                         const SizedBox(height: 24),
+
                         Text(
                           'Description',
                           style: TextStyle(
@@ -193,7 +227,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+
                         const SizedBox(height: 12),
+
                         Text(
                           widget.product.description,
                           style: TextStyle(
@@ -202,10 +238,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             height: 1.6,
                           ),
                         ),
+
                         const SizedBox(height: 24),
+
                         _buildFeatures(context),
+
                         const SizedBox(height: 24),
+
                         _buildQuantitySelector(context),
+
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -216,6 +257,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
         ),
       ),
+
       bottomNavigationBar: _buildBottomBar(context, cart),
     );
   }
@@ -232,20 +274,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+
         const SizedBox(height: 12),
+
         _buildFeatureItem(context, Icons.verified_user, 'Warranty', '2 Years'),
+
         _buildFeatureItem(
           context,
           Icons.local_shipping,
           'Free Shipping',
           'Available',
         ),
+
         _buildFeatureItem(
           context,
           Icons.support_agent,
           'Support',
           '24/7 Customer Service',
         ),
+
         if (widget.product.maxStock != null)
           _buildFeatureItem(
             context,
@@ -264,6 +311,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     String value,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -276,7 +324,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
             child: Icon(icon, color: AppTheme.accentBlue, size: 20),
           ),
+
           const SizedBox(width: 12),
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -287,6 +337,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   fontSize: 12,
                 ),
               ),
+
               Text(
                 value,
                 style: TextStyle(
@@ -304,6 +355,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Widget _buildQuantitySelector(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
         Text(
@@ -314,7 +366,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+
         const Spacer(),
+
         Container(
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
@@ -325,7 +379,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               IconButton(
                 icon: Icon(
                   Icons.remove,
-                  // FIX: was hardcoded Colors.white / Colors.white30
                   color: _quantity > 1
                       ? colorScheme.onSurface
                       : colorScheme.onSurface.withValues(alpha: 0.3),
@@ -334,6 +387,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ? () => setState(() => _quantity--)
                     : null,
               ),
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
@@ -345,10 +399,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                 ),
               ),
+
               IconButton(
                 icon: Icon(
                   Icons.add,
-                  // FIX: was hardcoded Colors.white / Colors.white30
                   color:
                       (widget.product.maxStock == null ||
                           _quantity < widget.product.maxStock!)
@@ -370,6 +424,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Widget _buildBottomBar(BuildContext context, CartProvider cart) {
     final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.only(
         left: 20,
@@ -400,7 +455,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   fontSize: 12,
                 ),
               ),
+
               const SizedBox(height: 4),
+
               Text(
                 '\$${(widget.product.price * _quantity).toStringAsFixed(2)}',
                 style: TextStyle(
@@ -411,11 +468,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
             ],
           ),
+
           const SizedBox(width: 16),
+
           Expanded(
             child: ElevatedButton(
               onPressed: () {
                 cart.addToCart(widget.product, quantity: _quantity);
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -424,9 +484,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     action: SnackBarAction(
                       label: 'VIEW CART',
                       onPressed: () {
-                        // FIX: was Navigator.pushReplacement(CartScreen)
-                        // which destroyed ProductDetailScreen from the stack.
-                        // context.push adds CartScreen on top — back still works.
                         context.push('/cart');
                       },
                     ),
