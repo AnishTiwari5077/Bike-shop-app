@@ -1,16 +1,25 @@
+// lib/views/cart_screen.dart
+// FIXES:
+//   - Removed import of home_screen.dart (circular nav bug)
+//   - Empty cart "Start Shopping" now uses widget.onGoHome callback
+//     (set by MainScreen) or Navigator.pop as fallback
+//   - "View Orders" after checkout uses context.push('/orders') via GoRouter
+//   - All hardcoded Colors.white* already theme-aware via colorScheme
+
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/cart_items.dart';
 import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
 import 'package:bike_shop/viewmodels/order_viewmodel.dart';
-import 'package:bike_shop/views/home_screen.dart';
-import 'package:bike_shop/views/order_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class CartScreen extends StatefulWidget {
+  /// Called when the user taps "Start Shopping" from the empty-cart state.
+  /// Provided by MainScreen to switch back to the Home tab without a push.
   final VoidCallback? onGoHome;
-  
+
   const CartScreen({super.key, this.onGoHome});
 
   @override
@@ -24,7 +33,6 @@ class _CartScreenState extends State<CartScreen> {
 
     if (cart.isEmpty) return;
 
-    // CartViewModel.checkout() creates Order, clears cart, sets isLoading
     final newOrder = await cart.checkout();
     ordersProvider.addOrder(newOrder);
 
@@ -57,10 +65,8 @@ class _CartScreenState extends State<CartScreen> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const OrdersScreen()),
-                );
+                // GoRouter: replaces the dialog + CartScreen with OrdersScreen
+                context.push('/orders');
               },
               child: const Text('View Orders'),
             ),
@@ -134,13 +140,8 @@ class _CartScreenState extends State<CartScreen> {
                       vertical: 16,
                     ),
                     itemCount: cart.cartItems.length,
-                    itemBuilder: (context, index) {
-                      return _buildCartItem(
-                        context,
-                        cart.cartItems[index],
-                        cart,
-                      );
-                    },
+                    itemBuilder: (context, index) =>
+                        _buildCartItem(context, cart.cartItems[index], cart),
                   ),
                 ),
                 _buildCheckoutSection(context, cart, cartSummary),
@@ -187,6 +188,7 @@ class _CartScreenState extends State<CartScreen> {
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
+            // FIX: use callback from MainScreen, not push(HomeScreen)
             onPressed: widget.onGoHome ?? () => Navigator.pop(context),
             icon: const Icon(Icons.shopping_bag_outlined),
             label: const Text('Start Shopping'),
@@ -278,7 +280,7 @@ class _CartScreenState extends State<CartScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '\$${product.price.toStringAsFixed(2)} x ${cartItem.quantity}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.accentCyan,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
