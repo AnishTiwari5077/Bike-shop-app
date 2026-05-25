@@ -95,7 +95,7 @@ class _OrdersScreenState extends State<OrdersScreen>
   }
 
   Widget _buildOrderCard(Order order) {
-    final isPending = order.status == 'pending';
+    final isPending = order.status == OrderStatus.pending;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -213,34 +213,31 @@ class _OrdersScreenState extends State<OrdersScreen>
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusChip(OrderStatus status) {
     Color color;
     String label;
 
-    switch (status.toLowerCase().trim()) {
-      case 'pending':
+    switch (status) {
+      case OrderStatus.pending:
         color = Colors.orange;
         label = 'Pending Payment';
         break;
-      case 'processing':
+      case OrderStatus.processing:
         color = Colors.blue;
         label = 'Processing';
         break;
-      case 'shipped':
+      case OrderStatus.shipped:
         color = Colors.purple;
         label = 'Shipped';
         break;
-      case 'delivered':
+      case OrderStatus.delivered:
         color = Colors.green;
         label = 'Delivered';
         break;
-      case 'cancelled':
+      case OrderStatus.cancelled:
         color = Colors.red;
         label = 'Cancelled';
         break;
-      default:
-        color = Colors.grey;
-        label = status;
     }
 
     return Container(

@@ -1,8 +1,6 @@
 //import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
 import 'package:bike_shop/viewmodels/notification_viewmodel.dart'; // add this
-import 'package:bike_shop/views/cart_screen.dart';
-import 'package:bike_shop/views/notification_screen.dart';
 import 'package:bike_shop/widgets/home_content.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

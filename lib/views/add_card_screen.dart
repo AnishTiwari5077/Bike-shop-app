@@ -120,29 +120,33 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
   String? _validateCardNumber(String? value) {
     final cleaned = value?.replaceAll(RegExp(r'\s+'), '') ?? '';
-    if (cleaned.length < 13 || cleaned.length > 19)
+    if (cleaned.length < 13 || cleaned.length > 19) {
       return 'Enter a valid card number';
+    }
     if (!_luhnCheck(cleaned)) return 'Invalid card number';
     return null;
   }
 
   String? _validateExpiry(String? value) {
-    if (value == null || !RegExp(r'^\d{2}/\d{2}$').hasMatch(value))
+    if (value == null || !RegExp(r'^\d{2}/\d{2}$').hasMatch(value)) {
       return 'Use MM/YY format';
+    }
     final parts = value.split('/');
     final month = int.parse(parts[0]);
     final year = int.parse(parts[1]);
     final now = DateTime.now();
     final expiryDate = DateTime(2000 + year, month);
     if (month < 1 || month > 12) return 'Invalid month';
-    if (expiryDate.isBefore(DateTime(now.year, now.month)))
+    if (expiryDate.isBefore(DateTime(now.year, now.month))) {
       return 'Card has expired';
+    }
     return null;
   }
 
   String? _validateCvc(String? value) {
-    if (value == null || value.length < 3 || value.length > 4)
+    if (value == null || value.length < 3 || value.length > 4) {
       return 'CVC must be 3-4 digits';
+    }
     return null;
   }
 

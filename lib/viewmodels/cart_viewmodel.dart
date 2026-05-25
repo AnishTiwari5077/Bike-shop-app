@@ -13,7 +13,6 @@
 
 import 'dart:convert';
 import 'package:bike_shop/core/base_viewmodel.dart';
-import 'package:bike_shop/models/order_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/cart_items.dart';
 import '../models/product_model.dart';
@@ -26,6 +25,9 @@ import 'package:flutter/material.dart';
 class CartViewModel extends BaseViewModel {
   final Map<String, CartItem> _items = {};
   static const String _storageKey = 'shopping_cart';
+
+  static const double discountThreshold = 100.0;
+  static const double discountRate = 0.10;
 
   CartViewModel() {
     _loadCart();
@@ -113,7 +115,9 @@ class CartViewModel extends BaseViewModel {
 
   CartItem? getCartItem(String productId) => _items[productId];
 
-  double getDiscount() => totalAmount > 100 ? totalAmount * 0.10 : 0.0;
+  double getDiscount() => totalAmount > discountThreshold
+      ? totalAmount * discountRate
+      : 0.0;
   double get finalAmount => totalAmount - getDiscount();
 
   Map<String, dynamic> getCartSummary() => {
@@ -123,26 +127,6 @@ class CartViewModel extends BaseViewModel {
     'discount': getDiscount(),
     'total': finalAmount,
   };
-
-  /// Creates an [Order] from current cart items, clears the cart, and returns
-  /// the Order. The caller is responsible for passing it to [OrderViewModel].
-  ///
-  /// Uses [BaseViewModel.isLoading] so the View can react without a local bool.
-  Future<Order> checkout() async {
-    setLoading();
-
-    final order = Order(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      items: List.from(cartItems),
-      totalAmount: finalAmount,
-      orderDate: DateTime.now(),
-      status: 'pending',
-    );
-
-    clearCart();
-    setSuccess();
-    return order;
-  }
 
   // ── SharedPreferences persistence ───────────────────────────────────────────────
 

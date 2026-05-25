@@ -146,6 +146,18 @@ class PaymentViewModel extends BaseViewModel {
 
   // ── Add card ──────────────────────────────────────────────────────────────
 
+  bool checkCanAddCard(bool isSignedIn) {
+    if (!isSignedIn) {
+      setError('Please sign in first to add a card.');
+      return false;
+    }
+    if (!_initialized) {
+      setError('Could not connect to payment service.');
+      return false;
+    }
+    return true;
+  }
+
   Future<bool> addCardWithPlainDetails({
     required String cardNumber,
     required String expiry,

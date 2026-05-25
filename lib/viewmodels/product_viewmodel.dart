@@ -3,20 +3,32 @@
 // All screens call setCategory(slug) and read displayedProducts — no mapping
 // logic anywhere in the widget tree.
 
+import 'dart:async';
+import 'dart:convert';
 import 'package:bike_shop/core/base_viewmodel.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:flutter/material.dart';
 import 'package:bike_shop/services/product_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductViewModel extends BaseViewModel {
   List<Product> _products = [];
   String _searchQuery = '';
   String _selectedCategory = 'all';
+  List<String> _recentSearches = [];
+  Timer? _debounceTimer;
+
+  static const String _recentSearchesKey = 'recent_searches';
 
   List<Product> get products => _products;
   String? get error => errorMessage;
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
+  List<String> get recentSearches => [..._recentSearches];
+
+  ProductViewModel() {
+    _loadRecentSearches();
+  }
 
   /// Maps a UI category slug to the list of product category strings stored
   /// in the database.  Lives here (ViewModel) — never in a View.
@@ -59,6 +71,13 @@ class ProductViewModel extends BaseViewModel {
     }).toList();
   }
 
+  /// Products filtered by category for specific screens (e.g. CategoryProductsScreen)
+  List<Product> productsForCategory(String slug) {
+    final cats = productCategoriesFor(slug);
+    if (cats.isEmpty) return _products;
+    return _products.where((p) => cats.contains(p.category)).toList();
+  }
+
   /// Product count for a given slug — used by ExploreScreen categories tab.
   int productCountFor(String slug) {
     final cats = productCategoriesFor(slug);
@@ -67,8 +86,21 @@ class ProductViewModel extends BaseViewModel {
   }
 
   void setSearchQuery(String query) {
-    _searchQuery = query;
-    notifyListeners();
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+
+    if (query.isEmpty) {
+      _searchQuery = '';
+      setIdle();
+      notifyListeners();
+      return;
+    }
+
+    setLoading();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _searchQuery = query;
+      setSuccess();
+      notifyListeners();
+    });
   }
 
   void setCategory(String category) {
@@ -108,6 +140,55 @@ class ProductViewModel extends BaseViewModel {
     } catch (_) {
       return null;
     }
+  }
+
+  // ── SharedPreferences Recent Searches ───────────────────────────────────────
+
+  Future<void> _loadRecentSearches() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? jsonString = prefs.getString(_recentSearchesKey);
+      if (jsonString != null) {
+        final List<dynamic> decoded = jsonDecode(jsonString);
+        _recentSearches = decoded.map((e) => e.toString()).toList();
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading recent searches: $e');
+    }
+  }
+
+  Future<void> _saveRecentSearches() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_recentSearchesKey, jsonEncode(_recentSearches));
+    } catch (e) {
+      debugPrint('Error saving recent searches: $e');
+    }
+  }
+
+  Future<void> addRecentSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    _recentSearches.remove(trimmed);
+    _recentSearches.insert(0, trimmed);
+    if (_recentSearches.length > 5) {
+      _recentSearches = _recentSearches.sublist(0, 5);
+    }
+    await _saveRecentSearches();
+    notifyListeners();
+  }
+
+  Future<void> removeRecentSearch(String query) async {
+    _recentSearches.remove(query);
+    await _saveRecentSearches();
+    notifyListeners();
+  }
+
+  Future<void> clearRecentSearches() async {
+    _recentSearches.clear();
+    await _saveRecentSearches();
+    notifyListeners();
   }
 }
 

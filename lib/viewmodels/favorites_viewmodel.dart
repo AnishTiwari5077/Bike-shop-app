@@ -71,7 +71,6 @@ class FavoritesViewModel extends BaseViewModel {
   // ── SharedPreferences persistence ─────────────────────────────────────────
 
   Future<void> _loadFavorites() async {
-    setLoading();
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? jsonString = prefs.getString(_storageKey);
@@ -83,11 +82,9 @@ class FavoritesViewModel extends BaseViewModel {
         _favoriteIds = {};
         debugPrint('ℹ️ No saved favorites found');
       }
-      setSuccess();
     } catch (e) {
       debugPrint('❌ Favorites load error: $e');
       _favoriteIds = {};
-      setIdle();
     }
   }
 

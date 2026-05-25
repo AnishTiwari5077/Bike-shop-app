@@ -116,11 +116,7 @@ class NotificationService {
     required double amount,
     required List<Map<String, dynamic>> items,
   }) async {
-    debugPrint('📧 ===== SENDING EMAIL =====');
-    debugPrint('   To: $email');
-    debugPrint('   URL: $_baseUrl/email/send-payment-email');
-    debugPrint('   Order: $orderId');
-    debugPrint('   Amount: $amount');
+    debugPrint('📧 Sending payment confirmation email to: $email for order: $orderId, amount: \$${amount.toStringAsFixed(2)}');
 
     try {
       final response = await http.post(
@@ -134,17 +130,13 @@ class NotificationService {
           'items': items,
         }),
       );
-      debugPrint('📧 Response status: ${response.statusCode}');
-      debugPrint('📧 Response body: ${response.body}');
       if (response.statusCode == 200) {
-        debugPrint('✅ Email sent successfully!');
+        debugPrint('✅ Email sent successfully to $email.');
       } else {
-        debugPrint('❌ Email send failed with status ${response.statusCode}');
+        debugPrint('❌ Email send failed. Status: ${response.statusCode}, Body: ${response.body}');
       }
     } catch (e) {
-      debugPrint('❌ Email send error: $e');
-      debugPrint('   Make sure the backend is running on $_baseUrl');
-      debugPrint('   And your phone is on the same Wi-Fi network');
+      debugPrint('❌ Email send error: $e. Ensure backend is running on $_baseUrl');
     }
   }
 }

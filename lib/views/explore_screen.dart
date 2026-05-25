@@ -5,8 +5,6 @@ import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
 import 'package:bike_shop/viewmodels/category_viewmodel.dart';
 import 'package:bike_shop/viewmodels/product_viewmodel.dart';
-import 'package:bike_shop/views/category_product_screen.dart';
-import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:bike_shop/widgets/search_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -237,7 +235,7 @@ class _CategoriesTabState extends State<CategoriesTab> {
         fit: BoxFit.cover,
         loadingBuilder: (context, child, progress) =>
             progress == null ? child : _buildIconFallback(cat),
-        errorBuilder: (_, __, ___) => _buildIconFallback(cat),
+        errorBuilder: (context, error, stackTrace) => _buildIconFallback(cat),
       );
     }
     return _buildIconFallback(cat);
@@ -434,7 +432,7 @@ class DealsTab extends StatelessWidget {
   }
 
   Widget _buildDealCard(BuildContext context, Product product) {
-    final discount = (20 + (product.id.hashCode % 40));
+    final discount = product.discountPercentage;
     final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
@@ -459,7 +457,7 @@ class DealsTab extends StatelessWidget {
                       product.imageUrl,
                       fit: BoxFit.cover,
                       width: double.infinity,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (context, error, stackTrace) => Container(
                         color: colorScheme.onSurface.withValues(alpha: 0.1),
                         child: const Icon(Icons.image_not_supported, size: 40),
                       ),
@@ -611,7 +609,7 @@ class NewArrivalsTab extends StatelessWidget {
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                     width: 80,
                     height: 80,
                     color: colorScheme.onSurface.withValues(alpha: 0.1),

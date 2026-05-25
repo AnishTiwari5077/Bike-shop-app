@@ -640,7 +640,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                             Switch(
                               value: _isDefault,
                               onChanged: (v) => setState(() => _isDefault = v),
-                              activeColor: AppTheme.accentBlue,
+                              activeTrackColor: AppTheme.accentBlue,
                             ),
                           ],
                         ),

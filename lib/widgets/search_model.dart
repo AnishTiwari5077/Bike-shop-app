@@ -1,9 +1,8 @@
 // lib/widgets/search_model.dart
 // FIXES:
-//   - All Colors.white* → colorScheme.onSurface.withValues(alpha:…)
-//   - Colors.grey[850] → Theme.of(context).cardColor
-//   - fillColor: Theme.of(context).scaffoldBackgroundColor → cardColor
-//   - ListTile text/icon colors now theme-aware
+//   - Driven fully by ProductsProvider (ProductViewModel)
+//   - Local state and debouncing removed
+//   - Recent searches populated from SharedPreferences via ProductsProvider
 
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
@@ -21,40 +20,31 @@ class SearchModal extends StatefulWidget {
 
 class _SearchModalState extends State<SearchModal> {
   final TextEditingController _searchController = TextEditingController();
-  List<Product> _searchResults = [];
-  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Synchronise text controller with any existing query
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<ProductsProvider>();
+      _searchController.text = provider.searchQuery;
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    // Reset search query on close so home screen product grid is not filtered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ProductsProvider>().setSearchQuery('');
+      }
+    });
     super.dispose();
   }
 
   void _performSearch(String query, ProductsProvider provider) {
-    if (query.isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
-      return;
-    }
-
-    setState(() => _isSearching = true);
-
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        final results = provider.products.where((product) {
-          return product.title.toLowerCase().contains(query.toLowerCase()) ||
-              product.subtitle.toLowerCase().contains(query.toLowerCase()) ||
-              product.description.toLowerCase().contains(query.toLowerCase());
-        }).toList();
-
-        setState(() {
-          _searchResults = results;
-          _isSearching = false;
-        });
-      }
-    });
+    provider.setSearchQuery(query);
   }
 
   @override
@@ -92,40 +82,31 @@ class _SearchModalState extends State<SearchModal> {
                   child: TextField(
                     controller: _searchController,
                     autofocus: true,
-                    // FIX: was Colors.white — now theme-aware
                     style: TextStyle(color: colorScheme.onSurface),
                     decoration: InputDecoration(
                       hintText: 'Search bikes, helmets, accessories...',
-                      // FIX: was Colors.white54
                       hintStyle: TextStyle(
                         color: colorScheme.onSurface.withValues(alpha: 0.54),
                       ),
                       prefixIcon: Icon(
                         Icons.search,
-                        // FIX: was Colors.white70
                         color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: Icon(
                                 Icons.clear,
-                                // FIX: was Colors.white70
                                 color: colorScheme.onSurface.withValues(
                                   alpha: 0.7,
                                 ),
                               ),
                               onPressed: () {
                                 _searchController.clear();
-                                setState(() {
-                                  _searchResults = [];
-                                  _isSearching = false;
-                                });
+                                _performSearch('', productsProvider);
                               },
                             )
                           : null,
                       filled: true,
-                      // FIX: was Theme.of(context).scaffoldBackgroundColor
-                      // (which in light mode = off-white → invisible against white modal)
                       fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -134,11 +115,17 @@ class _SearchModalState extends State<SearchModal> {
                     ),
                     onChanged: (value) =>
                         _performSearch(value, productsProvider),
+                    onSubmitted: (value) {
+                      productsProvider.addRecentSearch(value);
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    productsProvider.setSearchQuery('');
+                    Navigator.pop(context);
+                  },
                   child: const Text('Cancel'),
                 ),
               ],
@@ -150,24 +137,26 @@ class _SearchModalState extends State<SearchModal> {
             height: 1,
           ),
 
-          Expanded(child: _buildSearchContent(context)),
+          Expanded(child: _buildSearchContent(context, productsProvider)),
         ],
       ),
     );
   }
 
-  Widget _buildSearchContent(BuildContext context) {
-    if (_isSearching) {
+  Widget _buildSearchContent(BuildContext context, ProductsProvider provider) {
+    if (provider.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppTheme.accentBlue),
       );
     }
 
     if (_searchController.text.isEmpty) {
-      return _buildRecentSearches(context);
+      return _buildRecentSearches(context, provider);
     }
 
-    if (_searchResults.isEmpty) {
+    final results = provider.displayedProducts;
+
+    if (results.isEmpty) {
       final colorScheme = Theme.of(context).colorScheme;
       return Center(
         child: Column(
@@ -176,13 +165,11 @@ class _SearchModalState extends State<SearchModal> {
             Icon(
               Icons.search_off,
               size: 64,
-              // FIX: was Colors.white.withValues(alpha:.3)
               color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'No results found',
-              // FIX: was Colors.white70
               style: TextStyle(
                 color: colorScheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 18,
@@ -191,7 +178,6 @@ class _SearchModalState extends State<SearchModal> {
             const SizedBox(height: 8),
             Text(
               'Try different keywords',
-              // FIX: was Colors.white.withValues(alpha:.5)
               style: TextStyle(
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
                 fontSize: 14,
@@ -204,34 +190,49 @@ class _SearchModalState extends State<SearchModal> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _searchResults.length,
+      itemCount: results.length,
       itemBuilder: (context, index) =>
-          _buildSearchResultItem(context, _searchResults[index]),
+          _buildSearchResultItem(context, results[index], provider),
     );
   }
 
-  Widget _buildRecentSearches(BuildContext context) {
+  Widget _buildRecentSearches(BuildContext context, ProductsProvider provider) {
     final colorScheme = Theme.of(context).colorScheme;
-    final recentSearches = [
-      'Mountain Bike',
-      'Helmet',
-      'Electric Bike',
-      'Road Bike',
-    ];
+    final recentSearches = provider.recentSearches;
+
+    if (recentSearches.isEmpty) {
+      return Center(
+        child: Text(
+          'Type to search for products',
+          style: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.38),
+            fontSize: 15,
+          ),
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.all(20),
-          child: Text(
-            'Recent Searches',
-            style: TextStyle(
-              // FIX: was Colors.white
-              color: colorScheme.onSurface,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Searches',
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton(
+                onPressed: () => provider.clearRecentSearches(),
+                child: const Text('Clear All', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -239,29 +240,34 @@ class _SearchModalState extends State<SearchModal> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: recentSearches.length,
             itemBuilder: (context, index) {
+              final term = recentSearches[index];
               return ListTile(
-                // FIX: icon and text use theme-aware colors
                 leading: Icon(
                   Icons.history,
                   color: colorScheme.onSurface.withValues(alpha: 0.54),
                 ),
                 title: Text(
-                  recentSearches[index],
-                  // FIX: was Colors.white
+                  term,
                   style: TextStyle(color: colorScheme.onSurface),
                 ),
-                trailing: Icon(
-                  Icons.north_west,
-                  // FIX: was Colors.white54
-                  color: colorScheme.onSurface.withValues(alpha: 0.54),
-                  size: 20,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () => provider.removeRecentSearch(term),
+                      color: colorScheme.onSurface.withValues(alpha: 0.38),
+                    ),
+                    Icon(
+                      Icons.north_west,
+                      color: colorScheme.onSurface.withValues(alpha: 0.54),
+                      size: 20,
+                    ),
+                  ],
                 ),
                 onTap: () {
-                  _searchController.text = recentSearches[index];
-                  _performSearch(
-                    recentSearches[index],
-                    context.read<ProductsProvider>(),
-                  );
+                  _searchController.text = term;
+                  _performSearch(term, provider);
                 },
               );
             },
@@ -271,10 +277,15 @@ class _SearchModalState extends State<SearchModal> {
     );
   }
 
-  Widget _buildSearchResultItem(BuildContext context, Product product) {
+  Widget _buildSearchResultItem(
+    BuildContext context,
+    Product product,
+    ProductsProvider provider,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () {
+        provider.addRecentSearch(product.title);
         Navigator.pop(context);
         Navigator.push(
           context,
@@ -287,7 +298,6 @@ class _SearchModalState extends State<SearchModal> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          // FIX: was Theme.of(context).scaffoldBackgroundColor
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -297,7 +307,6 @@ class _SearchModalState extends State<SearchModal> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                // FIX: was Colors.grey[850]
                 color: colorScheme.onSurface.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -314,7 +323,6 @@ class _SearchModalState extends State<SearchModal> {
                   Text(
                     product.title,
                     style: TextStyle(
-                      // FIX: was Colors.white
                       color: colorScheme.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -325,7 +333,6 @@ class _SearchModalState extends State<SearchModal> {
                   const SizedBox(height: 4),
                   Text(
                     product.subtitle,
-                    // FIX: was Colors.white60
                     style: TextStyle(
                       color: colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: 13,

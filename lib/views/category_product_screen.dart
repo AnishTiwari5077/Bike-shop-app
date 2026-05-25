@@ -26,10 +26,7 @@ class CategoryProductsScreen extends StatelessWidget {
     final vm = context.watch<ProductsProvider>();
 
     // Delegate all filtering logic to the ViewModel — pure MVVM.
-    final cats = ProductViewModel.productCategoriesFor(categorySlug);
-    final categoryProducts = cats.isEmpty
-        ? vm.products
-        : vm.products.where((p) => cats.contains(p.category)).toList();
+    final categoryProducts = vm.productsForCategory(categorySlug);
 
     return Scaffold(
       appBar: AppBar(
@@ -133,7 +130,7 @@ class _CategoryProductCard extends StatelessWidget {
                       ),
                     );
                   },
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                     color: cs.onSurface.withValues(alpha: 0.1),
                     child: Icon(
                       Icons.image_not_supported,
