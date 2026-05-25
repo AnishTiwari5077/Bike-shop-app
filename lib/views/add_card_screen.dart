@@ -7,6 +7,11 @@ import 'package:provider/provider.dart';
 class AddCardScreen extends StatefulWidget {
   const AddCardScreen({super.key});
 
+  // FIX: was Navigator.push — now GoRouter context.push
+  // Callers: context.push('/add-card') and await the result via a completer
+  // or simply reload cards after pop. Since this screen returns bool via
+  // Navigator.pop(context, true/false), we keep that pattern but open via
+  // GoRouter so the route is registered.
   static Future<bool> show(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
@@ -115,33 +120,29 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
   String? _validateCardNumber(String? value) {
     final cleaned = value?.replaceAll(RegExp(r'\s+'), '') ?? '';
-    if (cleaned.length < 13 || cleaned.length > 19) {
+    if (cleaned.length < 13 || cleaned.length > 19)
       return 'Enter a valid card number';
-    }
     if (!_luhnCheck(cleaned)) return 'Invalid card number';
     return null;
   }
 
   String? _validateExpiry(String? value) {
-    if (value == null || !RegExp(r'^\d{2}/\d{2}$').hasMatch(value)) {
+    if (value == null || !RegExp(r'^\d{2}/\d{2}$').hasMatch(value))
       return 'Use MM/YY format';
-    }
     final parts = value.split('/');
     final month = int.parse(parts[0]);
     final year = int.parse(parts[1]);
     final now = DateTime.now();
     final expiryDate = DateTime(2000 + year, month);
     if (month < 1 || month > 12) return 'Invalid month';
-    if (expiryDate.isBefore(DateTime(now.year, now.month))) {
+    if (expiryDate.isBefore(DateTime(now.year, now.month)))
       return 'Card has expired';
-    }
     return null;
   }
 
   String? _validateCvc(String? value) {
-    if (value == null || value.length < 3 || value.length > 4) {
+    if (value == null || value.length < 3 || value.length > 4)
       return 'CVC must be 3-4 digits';
-    }
     return null;
   }
 
@@ -181,7 +182,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Info banner
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -215,7 +215,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Card number
                   Text(
                     'Card Number',
                     style: TextStyle(
@@ -254,7 +253,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Expiry & CVC row
                   Row(
                     children: [
                       Expanded(
@@ -336,7 +334,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Accepted cards
                   Text(
                     'Accepted Cards',
                     style: TextStyle(
@@ -356,7 +353,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // Save button
                   SizedBox(
                     width: double.infinity,
                     height: 54,
@@ -402,7 +398,6 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Cancel button
                   SizedBox(
                     width: double.infinity,
                     height: 48,

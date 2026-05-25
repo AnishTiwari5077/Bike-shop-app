@@ -3,6 +3,7 @@ import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:bike_shop/views/product_details_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/product_model.dart';
@@ -36,7 +37,11 @@ class CategoryProductsScreen extends StatelessWidget {
           ? Center(
               child: Text(
                 'No products in this category',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.54),
+                ),
               ),
             )
           : GridView.builder(
@@ -52,8 +57,16 @@ class CategoryProductsScreen extends StatelessWidget {
                   tablet: 0.78,
                   desktop: 0.80,
                 ),
-                crossAxisSpacing: Responsive.value(context, mobile: 12.0, tablet: 16.0),
-                mainAxisSpacing: Responsive.value(context, mobile: 12.0, tablet: 16.0),
+                crossAxisSpacing: Responsive.value(
+                  context,
+                  mobile: 12.0,
+                  tablet: 16.0,
+                ),
+                mainAxisSpacing: Responsive.value(
+                  context,
+                  mobile: 12.0,
+                  tablet: 16.0,
+                ),
               ),
               itemCount: categoryProducts.length,
               itemBuilder: (context, index) =>
@@ -72,14 +85,7 @@ class _CategoryProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(product: product),
-          ),
-        );
-      },
+      onTap: () => context.push('/product', extra: product),
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
@@ -103,7 +109,9 @@ class _CategoryProductCard extends StatelessWidget {
                     color: Theme.of(context).cardColor,
                     child: Icon(
                       Icons.image_not_supported,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.54),
                     ),
                   ),
                 ),

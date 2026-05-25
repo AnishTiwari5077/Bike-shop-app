@@ -12,6 +12,7 @@ import 'package:bike_shop/views/wishlist_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/config/responsive.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:bike_shop/viewmodels/theme_viewmodel.dart';
 
@@ -185,7 +186,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(
                             auth.email,
                             style: TextStyle(
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -193,7 +196,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(
                             'Sign in to access all features',
                             style: TextStyle(
-                              color: colorScheme.onSurface.withValues(alpha: 0.54),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.54,
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -268,48 +273,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.list_alt,
                         title: 'My Orders',
                         subtitle: 'Track your orders',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const OrdersScreen(),
-                          ),
-                        ),
+                        onTap: () => context.push('/orders'),
                       ),
                       _buildMenuItem(
                         context,
                         icon: Icons.favorite_border,
                         title: 'Wishlist',
                         subtitle: 'Your favorite items',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const WishListScreen(),
-                          ),
-                        ),
+                        onTap: () => context.push('/wishlist'),
                       ),
                       _buildMenuItem(
                         context,
                         icon: Icons.location_on_outlined,
                         title: 'Addresses',
                         subtitle: 'Manage delivery addresses',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AddressesScreen(),
-                          ),
-                        ),
+                        onTap: () => context.push('/addresses'),
                       ),
                       _buildMenuItem(
                         context,
                         icon: Icons.payment,
                         title: 'Payment Methods',
                         subtitle: 'Manage payment options',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PaymentMethodsScreen(),
-                          ),
-                        ),
+                        onTap: () => context.push('/payment'),
                       ),
 
                       const SizedBox(height: 24),
@@ -527,10 +512,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 80,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface,
+          width: 3,
+        ),
         color: Theme.of(context).cardColor,
       ),
-      child: Icon(Icons.person, size: 40, color: Theme.of(context).colorScheme.onSurface),
+      child: Icon(
+        Icons.person,
+        size: 40,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
     );
   }
 
