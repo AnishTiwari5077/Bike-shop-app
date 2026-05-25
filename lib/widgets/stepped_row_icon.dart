@@ -55,10 +55,17 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: Responsive.value(context, mobile: 110.0, tablet: 120.0, desktop: 130.0),
+      height: Responsive.value(
+        context,
+        mobile: 110.0,
+        tablet: 120.0,
+        desktop: 130.0,
+      ),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: Responsive.horizontalPadding(context)),
+        padding: EdgeInsets.symmetric(
+          horizontal: Responsive.horizontalPadding(context),
+        ),
         itemCount: _categories.length,
         itemBuilder: (context, index) {
           final category = _categories[index];
@@ -75,8 +82,18 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                 children: [
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    height: Responsive.value(context, mobile: 70.0, tablet: 80.0, desktop: 90.0),
-                    width: Responsive.value(context, mobile: 70.0, tablet: 80.0, desktop: 90.0),
+                    height: Responsive.value(
+                      context,
+                      mobile: 70.0,
+                      tablet: 80.0,
+                      desktop: 90.0,
+                    ),
+                    width: Responsive.value(
+                      context,
+                      mobile: 70.0,
+                      tablet: 80.0,
+                      desktop: 90.0,
+                    ),
                     decoration: BoxDecoration(
                       gradient: isSelected
                           ? LinearGradient(
@@ -84,7 +101,9 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                               end: Alignment.bottomRight,
                               colors: [
                                 category['color'] as Color,
-                                (category['color'] as Color).withValues(alpha: .7),
+                                (category['color'] as Color).withValues(
+                                  alpha: .7,
+                                ),
                               ],
                             )
                           : null,
@@ -93,14 +112,16 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                       border: Border.all(
                         color: isSelected
                             ? (category['color'] as Color).withValues(alpha: .5)
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: .1),
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: .1),
                         width: isSelected ? 2 : 1,
                       ),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: (category['color'] as Color).withValues(alpha: 
-                                  0.3,
+                                color: (category['color'] as Color).withValues(
+                                  alpha: 0.3,
                                 ),
                                 blurRadius: 12,
                                 offset: const Offset(0, 6),
@@ -114,8 +135,17 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                         duration: const Duration(milliseconds: 200),
                         child: Icon(
                           category['icon'] as IconData,
-                          size: Responsive.value(context, mobile: 32.0, tablet: 36.0, desktop: 40.0),
-                          color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                          size: Responsive.value(
+                            context,
+                            mobile: 32.0,
+                            tablet: 36.0,
+                            desktop: 40.0,
+                          ),
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
@@ -124,7 +154,11 @@ class _SteppedIconRowState extends State<SteppedIconRow> {
                   AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 200),
                     style: TextStyle(
-                      color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: isSelected ? 13 : 12,
                       fontWeight: isSelected
                           ? FontWeight.w600

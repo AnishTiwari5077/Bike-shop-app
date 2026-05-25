@@ -9,6 +9,8 @@ class Product {
   final double? rating;
   final String category;
   final int? maxStock;
+  final bool? isDeal; // 👈 ADDED
+  final bool? isNewArrival; // 👈 ADDED
 
   Product({
     required this.id,
@@ -21,6 +23,8 @@ class Product {
     this.rating,
     required this.category,
     this.maxStock,
+    this.isDeal, // 👈 ADDED
+    this.isNewArrival, // 👈 ADDED
   });
 
   factory Product.fromMap(Map<String, dynamic> map) {
@@ -35,6 +39,8 @@ class Product {
       rating: map['rating']?.toDouble(),
       category: map['category'] ?? 'bike',
       maxStock: map['maxStock'],
+      isDeal: map['isDeal'] ?? false, // 👈 ADDED
+      isNewArrival: map['isNewArrival'] ?? false, // 👈 ADDED
     );
   }
 
@@ -50,6 +56,8 @@ class Product {
       'rating': rating,
       'category': category,
       'maxStock': maxStock,
+      'isDeal': isDeal, // 👈 ADDED
+      'isNewArrival': isNewArrival, // 👈 ADDED
     };
   }
 }
