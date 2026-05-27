@@ -53,6 +53,13 @@ class CheckoutViewModel extends BaseViewModel {
   }) async {
     setLoading();
 
+    // ── OPTIMISTIC UPDATE ──────────────────────────────────────────────────
+    // Immediately mark the order as delivered so the "Pay Now" button
+    // disappears from the Orders screen. If the payment fails we revert.
+    // This prevents double-pay when the user navigates back during a
+    // long-running network call.
+    orderVM.updateOrderStatus(order.id, OrderStatus.delivered);
+
     // FIX: pass customerName, customerEmail, and items so MongoDB stores the
     // full order document instead of empty strings and an empty array.
     final result = await paymentVM.payForOrder(
@@ -74,8 +81,7 @@ class CheckoutViewModel extends BaseViewModel {
     );
 
     if (result.isSuccess) {
-      // ── Update order status ──────────────────────────────────────────────
-      orderVM.updateOrderStatus(order.id, OrderStatus.delivered);
+      // Order is already marked delivered (optimistic update above).
 
       // ── Add to in-app notification list ─────────────────────────────────
       notificationVM.addNotification(
@@ -111,6 +117,9 @@ class CheckoutViewModel extends BaseViewModel {
       setSuccess();
       return true;
     } else {
+      // ── REVERT OPTIMISTIC UPDATE ─────────────────────────────────────────
+      // Payment failed — put the order back to pending so the user can retry.
+      orderVM.updateOrderStatus(order.id, OrderStatus.pending);
       setError(result.errorMessage ?? 'Payment failed. Please try again.');
       return false;
     }

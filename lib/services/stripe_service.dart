@@ -166,10 +166,10 @@ class StripeService {
     }
   }
 
-  // ── Mark order as paid directly (fallback for when webhook is delayed) ────
-  // Called after Stripe.instance.confirmPayment() succeeds on the client.
-  // This ensures the order status is always updated even if the Stripe
-  // webhook hasn't arrived yet (e.g. local dev without Stripe CLI).
+  // ── Mark order as paid directly ───────────────────────────────────────────
+  // Called after payment is confirmed on the client side.
+  // Ensures status is updated even when the Stripe webhook is delayed or
+  // pointing to the wrong URL (e.g. during development).
   Future<void> _confirmOrderPaid(String orderId) async {
     try {
       final res = await http
@@ -187,7 +187,8 @@ class StripeService {
         debugPrint('⚠️  confirmOrderPaid error: ${data['error']}');
       }
     } catch (e) {
-      // Non-fatal: the webhook will eventually update the status.
+      // Non-fatal: log and continue. Webhook will eventually update the status
+      // once the correct URL is configured in the Stripe dashboard.
       debugPrint('⚠️  confirmOrderPaid exception (non-fatal): $e');
     }
   }
@@ -200,7 +201,6 @@ class StripeService {
     required String customerId,
     required String paymentMethodId,
     required String orderId,
-    // FIX: added the three missing fields so MongoDB gets full order data
     required String customerName,
     required String customerEmail,
     required List<Map<String, dynamic>> items,
@@ -227,8 +227,6 @@ class StripeService {
               'customerId': customerId,
               'paymentMethodId': paymentMethodId,
               'orderId': orderId,
-              // FIX: these three were missing — now sent so MongoDB order
-              // document has full customer and item data
               'customerName': customerName,
               'customerEmail': customerEmail,
               'items': items,
@@ -238,7 +236,7 @@ class StripeService {
 
       final data = jsonDecode(res.body);
 
-      // If backend says already paid, treat as success
+      // Backend says already paid → treat as success
       if (res.statusCode == 400 &&
           (data['error'] as String?)?.contains('already been paid') == true) {
         debugPrint('ℹ️  Order $orderId already paid — returning success');
@@ -251,33 +249,80 @@ class StripeService {
 
       final clientSecret = data['clientSecret'] as String;
 
-      // Confirm payment with Stripe SDK (handles 3DS automatically)
-      await Stripe.instance.confirmPayment(
-        paymentIntentClientSecret: clientSecret,
-        data: PaymentMethodParams.cardFromMethodId(
-          paymentMethodData: PaymentMethodDataCardFromMethod(
-            paymentMethodId: paymentMethodId,
+      try {
+        // Confirm payment with Stripe SDK (handles 3DS automatically)
+        await Stripe.instance.confirmPayment(
+          paymentIntentClientSecret: clientSecret,
+          data: PaymentMethodParams.cardFromMethodId(
+            paymentMethodData: PaymentMethodDataCardFromMethod(
+              paymentMethodId: paymentMethodId,
+            ),
           ),
-        ),
-      );
+        );
+      } on StripeException catch (e) {
+        final code = e.error.code;
+        final msg = e.error.localizedMessage ?? '';
 
-      // FIX: after Stripe confirms payment on the client, immediately mark
-      // the order as paid in MongoDB. This is the direct fix for status
-      // staying "pending" — the Stripe webhook works in production but in
-      // development it only fires if you run Stripe CLI. This call ensures
-      // the status is updated regardless.
+        // FIX: "PaymentIntent already succeeded" means the payment went through
+        // on a previous attempt but the app crashed or lost connectivity before
+        // _confirmOrderPaid was called. Stripe throws this error when you try
+        // to confirm an already-succeeded PaymentIntent. Treat it as success
+        // and fall through to _confirmOrderPaid so MongoDB is updated.
+        final alreadySucceeded =
+            code == FailureCode.Failed &&
+            (msg.toLowerCase().contains('already succeeded') ||
+                msg.toLowerCase().contains('previously confirmed'));
+
+        if (!alreadySucceeded) {
+          debugPrint('StripeException: $msg');
+          return PaymentResult.failure(msg.isNotEmpty ? msg : 'Payment failed');
+        }
+
+        debugPrint(
+          'ℹ️  PaymentIntent already succeeded for order $orderId — treating as success',
+        );
+        // Fall through to _confirmOrderPaid below
+      }
+
+      // Payment confirmed (or was already confirmed on a prior attempt).
+      // Update MongoDB status directly — don't rely solely on the webhook.
       await _confirmOrderPaid(orderId);
 
       return PaymentResult.success();
-    } on StripeException catch (e) {
-      final msg = e.error.localizedMessage ?? 'Payment failed';
-      debugPrint('StripeException: $msg');
-      return PaymentResult.failure(msg);
     } catch (e) {
       debugPrint('payForOrder exception: $e');
       return PaymentResult.failure('Unexpected error. Please try again.');
     } finally {
       _processingOrderIds.remove(orderId);
+    }
+  }
+
+  // ── Recover pending orders after network reconnect ────────────────────────
+  // Calls the backend recovery endpoint that checks Stripe for actual payment
+  // status of all pending orders for the given customer.
+  Future<List<String>> recoverPendingOrders(String customerId) async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$_baseUrl/payments/recover-pending'),
+            headers: _headers,
+            body: jsonEncode({'customerId': customerId}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200) {
+        final recovered = (data['recovered'] as List)
+            .map((r) => r['orderId'] as String)
+            .toList();
+        debugPrint('🔄 Backend recovered ${recovered.length} orders');
+        return recovered;
+      }
+      debugPrint('⚠️  recoverPendingOrders status: ${res.statusCode}');
+      return [];
+    } catch (e) {
+      debugPrint('⚠️  recoverPendingOrders exception: $e');
+      return [];
     }
   }
 }

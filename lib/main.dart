@@ -116,7 +116,6 @@ class BikeShopApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => CartViewModel()),
         ChangeNotifierProvider(create: (_) => FavoritesViewModel()),
-        ChangeNotifierProvider(create: (_) => OrderViewModel()),
         ChangeNotifierProvider(create: (_) => AddressViewModel()),
         ChangeNotifierProxyProvider<AuthViewModel, PaymentViewModel>(
           create: (_) => PaymentViewModel(),
@@ -133,6 +132,21 @@ class BikeShopApp extends StatelessWidget {
               }
             }
             return payment!;
+          },
+        ),
+        ChangeNotifierProxyProvider<PaymentViewModel, OrderViewModel>(
+          create: (_) => OrderViewModel(),
+          update: (_, paymentVM, orderVM) {
+            if (orderVM != null) {
+              final customerId = paymentVM.stripeCustomerId;
+              if (customerId != null) {
+                // Start monitoring connectivity for auto-recovery
+                orderVM.startConnectivityMonitor(customerId);
+              } else {
+                orderVM.stopConnectivityMonitor();
+              }
+            }
+            return orderVM!;
           },
         ),
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
