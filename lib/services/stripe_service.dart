@@ -166,10 +166,33 @@ class StripeService {
     }
   }
 
+  // ── Mark order as paid directly (fallback for when webhook is delayed) ────
+  // Called after Stripe.instance.confirmPayment() succeeds on the client.
+  // This ensures the order status is always updated even if the Stripe
+  // webhook hasn't arrived yet (e.g. local dev without Stripe CLI).
+  Future<void> _confirmOrderPaid(String orderId) async {
+    try {
+      final res = await http
+          .post(
+            Uri.parse('$_baseUrl/payments/confirm-order'),
+            headers: _headers,
+            body: jsonEncode({'orderId': orderId}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (res.statusCode == 200) {
+        debugPrint('✅ Order $orderId confirmed as paid in MongoDB');
+      } else {
+        final data = jsonDecode(res.body);
+        debugPrint('⚠️  confirmOrderPaid error: ${data['error']}');
+      }
+    } catch (e) {
+      // Non-fatal: the webhook will eventually update the status.
+      debugPrint('⚠️  confirmOrderPaid exception (non-fatal): $e');
+    }
+  }
+
   // ── Pay for an order ──────────────────────────────────────────────────────
-  // FIX 1: Added _processingOrderIds to track in-progress payments
-  //         This prevents the same order from being submitted twice
-  //         even if the user taps Pay very quickly multiple times.
   final Set<String> _processingOrderIds = {};
 
   Future<PaymentResult> payForOrder({
@@ -177,9 +200,13 @@ class StripeService {
     required String customerId,
     required String paymentMethodId,
     required String orderId,
+    // FIX: added the three missing fields so MongoDB gets full order data
+    required String customerName,
+    required String customerEmail,
+    required List<Map<String, dynamic>> items,
     String currency = 'usd',
   }) async {
-    // ── FIX 1: Prevent duplicate in-flight requests for the same order ──────
+    // Prevent duplicate in-flight requests for the same order
     if (_processingOrderIds.contains(orderId)) {
       debugPrint(
         '⚠️  Payment already in progress for order $orderId — ignoring duplicate tap',
@@ -190,7 +217,6 @@ class StripeService {
     _processingOrderIds.add(orderId);
 
     try {
-      // ── FIX 2: Increased timeout — network drops shouldn't cause retries ──
       final res = await http
           .post(
             Uri.parse('$_baseUrl/payments/create-payment-intent'),
@@ -200,14 +226,19 @@ class StripeService {
               'currency': currency,
               'customerId': customerId,
               'paymentMethodId': paymentMethodId,
-              'orderId': orderId, // backend uses this as idempotency key
+              'orderId': orderId,
+              // FIX: these three were missing — now sent so MongoDB order
+              // document has full customer and item data
+              'customerName': customerName,
+              'customerEmail': customerEmail,
+              'items': items,
             }),
           )
-          .timeout(const Duration(seconds: 20)); // FIX 2: was 15s, now 20s
+          .timeout(const Duration(seconds: 20));
 
       final data = jsonDecode(res.body);
 
-      // ── FIX 3: If backend says already paid, treat as success ─────────────
+      // If backend says already paid, treat as success
       if (res.statusCode == 400 &&
           (data['error'] as String?)?.contains('already been paid') == true) {
         debugPrint('ℹ️  Order $orderId already paid — returning success');
@@ -220,7 +251,7 @@ class StripeService {
 
       final clientSecret = data['clientSecret'] as String;
 
-      // Confirm payment — handles 3DS automatically
+      // Confirm payment with Stripe SDK (handles 3DS automatically)
       await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: clientSecret,
         data: PaymentMethodParams.cardFromMethodId(
@@ -229,6 +260,13 @@ class StripeService {
           ),
         ),
       );
+
+      // FIX: after Stripe confirms payment on the client, immediately mark
+      // the order as paid in MongoDB. This is the direct fix for status
+      // staying "pending" — the Stripe webhook works in production but in
+      // development it only fires if you run Stripe CLI. This call ensures
+      // the status is updated regardless.
+      await _confirmOrderPaid(orderId);
 
       return PaymentResult.success();
     } on StripeException catch (e) {
@@ -239,7 +277,6 @@ class StripeService {
       debugPrint('payForOrder exception: $e');
       return PaymentResult.failure('Unexpected error. Please try again.');
     } finally {
-      // ── Always remove from processing set when done ─────────────────────
       _processingOrderIds.remove(orderId);
     }
   }

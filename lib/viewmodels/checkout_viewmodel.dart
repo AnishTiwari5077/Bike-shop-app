@@ -53,10 +53,24 @@ class CheckoutViewModel extends BaseViewModel {
   }) async {
     setLoading();
 
+    // FIX: pass customerName, customerEmail, and items so MongoDB stores the
+    // full order document instead of empty strings and an empty array.
     final result = await paymentVM.payForOrder(
       amount: order.totalAmount,
       orderId: order.id,
       paymentMethodId: paymentMethodId,
+      customerName: authVM.displayName,
+      customerEmail: authVM.email,
+      items: order.items
+          .map(
+            (i) => {
+              'productId': i.product.id,
+              'title': i.product.title,
+              'price': i.product.price,
+              'quantity': i.quantity,
+            },
+          )
+          .toList(),
     );
 
     if (result.isSuccess) {
