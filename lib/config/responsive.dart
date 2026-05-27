@@ -62,7 +62,8 @@ class Responsive {
   }
 
   /// Shorthand: value for [mobile], [tablet], [desktop]
-  static T value<T>(BuildContext context, {
+  static T value<T>(
+    BuildContext context, {
     required T mobile,
     T? tablet,
     T? desktop,

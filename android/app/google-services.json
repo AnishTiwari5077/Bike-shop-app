@@ -12,7 +12,20 @@
           "package_name": "com.example.bike_shop"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1007440937952-q9sfespr09oc5bpmod1tps9ev4at2mlb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.bike_shop",
+            "certificate_hash": "7c0640c769b36715ce62fab8618b1acee58d1dfa"
+          }
+        },
+        {
+          "client_id": "1007440937952-e6uqk7i6h2dq3em8ptvd77h0eshmdepf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBGpr5Mc6DmGqfQYOcwVxNzd6Lu5DrUXNE"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1007440937952-e6uqk7i6h2dq3em8ptvd77h0eshmdepf.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1007440937952-r3jmt15e3tmgvpuh3l80tptr2mhsqj68.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.firebaseAuthentication"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +56,20 @@
           "package_name": "com.example.firebase_authentication"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1007440937952-46v20rkf4unplolerqqc6fjaf853kq1i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.firebase_authentication",
+            "certificate_hash": "7c0640c769b36715ce62fab8618b1acee58d1dfa"
+          }
+        },
+        {
+          "client_id": "1007440937952-e6uqk7i6h2dq3em8ptvd77h0eshmdepf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBGpr5Mc6DmGqfQYOcwVxNzd6Lu5DrUXNE"
@@ -39,7 +77,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1007440937952-e6uqk7i6h2dq3em8ptvd77h0eshmdepf.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1007440937952-r3jmt15e3tmgvpuh3l80tptr2mhsqj68.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.firebaseAuthentication"
+              }
+            }
+          ]
         }
       }
     }

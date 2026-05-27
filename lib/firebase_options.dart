@@ -17,29 +17,17 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -59,4 +47,47 @@ class DefaultFirebaseOptions {
     projectId: 'fir-authetication-c3514',
     storageBucket: 'fir-authetication-c3514.firebasestorage.app',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyChBdrwNiQKY4NJFzvtpmjvLjY056cxF_8',
+    appId: '1:1007440937952:web:e2953cd49864b897372185',
+    messagingSenderId: '1007440937952',
+    projectId: 'fir-authetication-c3514',
+    authDomain: 'fir-authetication-c3514.firebaseapp.com',
+    storageBucket: 'fir-authetication-c3514.firebasestorage.app',
+    measurementId: 'G-NKQNBLJMQC',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyCuaRMTmH0YamO_EVMHfSwNQuY3X8NBul0',
+    appId: '1:1007440937952:ios:5582221df674b1e1372185',
+    messagingSenderId: '1007440937952',
+    projectId: 'fir-authetication-c3514',
+    storageBucket: 'fir-authetication-c3514.firebasestorage.app',
+    androidClientId: '1007440937952-46v20rkf4unplolerqqc6fjaf853kq1i.apps.googleusercontent.com',
+    iosClientId: '1007440937952-u5am9bon654071vqhur4njhm9o6uha0r.apps.googleusercontent.com',
+    iosBundleId: 'com.example.bikeShop',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyCuaRMTmH0YamO_EVMHfSwNQuY3X8NBul0',
+    appId: '1:1007440937952:ios:5582221df674b1e1372185',
+    messagingSenderId: '1007440937952',
+    projectId: 'fir-authetication-c3514',
+    storageBucket: 'fir-authetication-c3514.firebasestorage.app',
+    androidClientId: '1007440937952-46v20rkf4unplolerqqc6fjaf853kq1i.apps.googleusercontent.com',
+    iosClientId: '1007440937952-u5am9bon654071vqhur4njhm9o6uha0r.apps.googleusercontent.com',
+    iosBundleId: 'com.example.bikeShop',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyChBdrwNiQKY4NJFzvtpmjvLjY056cxF_8',
+    appId: '1:1007440937952:web:ead9ecb8cf3a78bb372185',
+    messagingSenderId: '1007440937952',
+    projectId: 'fir-authetication-c3514',
+    authDomain: 'fir-authetication-c3514.firebaseapp.com',
+    storageBucket: 'fir-authetication-c3514.firebasestorage.app',
+    measurementId: 'G-TJDJ4EHK6L',
+  );
+
 }
