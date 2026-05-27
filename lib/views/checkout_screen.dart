@@ -37,6 +37,7 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _selectedCardId;
+  bool _isPaid = false;
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _pay() async {
+    if (_isPaid) return; // Already paid — prevent double-tap
     if (_selectedCardId == null) {
       _showError('Please select a payment method.');
       return;
@@ -64,6 +66,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     if (!mounted) return;
     if (ok) {
+      setState(() => _isPaid = true);
       _showSuccessSheet();
     } else {
       final err = context.read<CheckoutViewModel>().errorMessage;
@@ -256,7 +259,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
       bottomNavigationBar: _PayButton(
         order: widget.order,
-        isEnabled: _selectedCardId != null && !checkoutVM.isLoading,
+        isEnabled: _selectedCardId != null && !checkoutVM.isLoading && !_isPaid,
         isLoading: checkoutVM.isLoading,
         onPay: _pay,
       ),

@@ -7,10 +7,15 @@
 // Changes from original:
 //   - Extends BaseViewModel instead of using `with ChangeNotifier`
 //   - All order logic, SharedPreferences persistence, notifyListeners() preserved
+//   - Added connectivity monitoring + auto-recovery for pending orders
 // ---------------------------------------------------------------------------
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:bike_shop/core/base_viewmodel.dart';
+import 'package:bike_shop/services/notification_service.dart';
+import 'package:bike_shop/services/stripe_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/order_model.dart';
@@ -21,6 +26,11 @@ import '../models/order_model.dart';
 class OrderViewModel extends BaseViewModel {
   final List<Order> _orders = [];
   static const String _storageKey = 'orders';
+
+  // ── Connectivity-based recovery ──────────────────────────────────────────
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  String? _customerId;
+  bool _isRecovering = false;
 
   OrderViewModel() {
     _loadOrders();
@@ -38,6 +48,9 @@ class OrderViewModel extends BaseViewModel {
   List<Order> get completedOrders => _orders
       .where((order) => order.status == OrderStatus.delivered)
       .toList();
+
+  bool get hasPendingOrders =>
+      _orders.any((o) => o.status == OrderStatus.pending);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -72,6 +85,67 @@ class OrderViewModel extends BaseViewModel {
     }
   }
 
+  // ── Connectivity monitoring ───────────────────────────────────────────────
+  /// Start listening for connectivity changes. When the device comes back
+  /// online, automatically try to recover any pending orders via the backend.
+  void startConnectivityMonitor(String customerId) {
+    _customerId = customerId;
+    _connectivitySub?.cancel();
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      final isOnline = results.any((r) => r != ConnectivityResult.none);
+      if (isOnline && _customerId != null && hasPendingOrders) {
+        recoverPendingOrders(_customerId!);
+      }
+    });
+    debugPrint('📡 Connectivity monitor started for customer: $customerId');
+  }
+
+  /// Stop listening for connectivity changes (e.g. on logout).
+  void stopConnectivityMonitor() {
+    _connectivitySub?.cancel();
+    _connectivitySub = null;
+    _customerId = null;
+    debugPrint('📡 Connectivity monitor stopped');
+  }
+
+  // ── Recovery ──────────────────────────────────────────────────────────────
+  /// Call the backend POST /payments/recover-pending to find orders that
+  /// were charged by Stripe but stuck as pending in MongoDB.
+  /// Updates local state + fires push notifications for each recovered order.
+  Future<void> recoverPendingOrders(String customerId) async {
+    if (_isRecovering) return; // Prevent concurrent recovery
+    if (!hasPendingOrders) return; // Nothing to recover
+    _isRecovering = true;
+
+    try {
+      final recoveredIds =
+          await StripeService.instance.recoverPendingOrders(customerId);
+
+      for (final orderId in recoveredIds) {
+        updateOrderStatus(orderId, OrderStatus.delivered);
+
+        // Fire a local push notification for each recovered order
+        final order = getOrderById(orderId);
+        if (order != null) {
+          await NotificationService.instance.showPaymentSuccessNotification(
+            orderId: orderId,
+            amount: order.totalWithTax,
+          );
+        }
+      }
+
+      if (recoveredIds.isNotEmpty) {
+        debugPrint(
+          '🔄 Auto-recovered ${recoveredIds.length} pending orders',
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️  recoverPendingOrders error: $e');
+    } finally {
+      _isRecovering = false;
+    }
+  }
+
   // ── SharedPreferences persistence ─────────────────────────────────────────
 
   Future<void> _loadOrders() async {
@@ -97,6 +171,12 @@ class OrderViewModel extends BaseViewModel {
         .map((o) => o.toMap())
         .toList();
     await prefs.setString(_storageKey, jsonEncode(data));
+  }
+
+  @override
+  void dispose() {
+    _connectivitySub?.cancel();
+    super.dispose();
   }
 }
 
