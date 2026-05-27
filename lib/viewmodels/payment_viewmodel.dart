@@ -1,22 +1,18 @@
-// lib/providers/payment_viewmodel.dart
+// lib/viewmodels/payment_viewmodel.dart
 // ---------------------------------------------------------------------------
 // PaymentViewModel — migrated from PaymentProvider to MVVM pattern.
 //
 // IMPORT PATH UNCHANGED: 'package:bike_shop/viewmodels/payment_viewmodel.dart'
 //
 // Changes from original:
-//   - Extends BaseViewModel instead of using `with ChangeNotifier`
-//   - Replaces _setLoading(bool) helper with base class setLoading()/setIdle()
-//   - Replaces _isLoading/_error fields with base class equivalents
-//   - Adds backward-compatible `error` getter alias
-//   - All Stripe integration logic preserved exactly
+//   - payForOrder() now accepts customerName, customerEmail, items and passes
+//     them through to StripeService so MongoDB gets the full order document.
 // ---------------------------------------------------------------------------
 
 import 'package:bike_shop/core/base_viewmodel.dart';
 import 'package:bike_shop/services/stripe_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-//import '../service/stripe_service.dart';
 
 /// ViewModel managing Stripe customer, saved payment cards, and order payments.
 ///
@@ -247,25 +243,35 @@ class PaymentViewModel extends BaseViewModel {
   }
 
   // ── Pay for order ─────────────────────────────────────────────────────────
+  // FIX: added customerName, customerEmail, items so the full order document
+  // is saved to MongoDB (previously they were empty strings / empty array).
 
   Future<PaymentResult> payForOrder({
     required double amount,
     required String orderId,
+    required String customerName,
+    required String customerEmail,
+    required List<Map<String, dynamic>> items,
     String? paymentMethodId,
   }) async {
     final pmId = paymentMethodId ?? _defaultCardId;
+
     if (_stripeCustomerId == null) {
       return PaymentResult.failure('Payment service not initialized.');
     }
     if (pmId == null) {
       return PaymentResult.failure('No payment method selected.');
     }
+
     try {
       return await StripeService.instance.payForOrder(
         amount: amount,
         customerId: _stripeCustomerId!,
         paymentMethodId: pmId,
         orderId: orderId,
+        customerName: customerName,
+        customerEmail: customerEmail,
+        items: items,
       );
     } catch (e) {
       return PaymentResult.failure('Unexpected error. Please try again.');
