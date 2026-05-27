@@ -8,14 +8,6 @@ class StripeService {
   StripeService._();
   static final StripeService instance = StripeService._();
 
-  // ── Change this to match your environment ───────────────────────────────
-  // Android emulator  → 'http://10.0.2.2:3000'
-  // iOS simulator     → 'http://localhost:3000'
-  // Physical device   → 'http://<your-local-IP>:3000'  e.g. 192.168.1.6
-  //static const String _baseUrl = 'http://10.0.2.2:3000';
-
-  // static const String _baseUrl = 'http://192.168.1.6:3000';
-  //static const String _baseUrl = 'http://192.168.1.4:3000';
   static const String _baseUrl = ApiConfig.baseUrl;
 
   final Map<String, String> _headers = {'Content-Type': 'application/json'};
@@ -44,7 +36,7 @@ class StripeService {
     }
   }
 
-  // ── Create a Stripe token from raw card details (Stripe REST API) ────────
+  // ── Create a Stripe token from raw card details ──────────────────────────
   Future<String?> createTokenFromCard({
     required String number,
     required int expMonth,
@@ -108,7 +100,7 @@ class StripeService {
     }
   }
 
-  // ── Attach PaymentMethod directly (CardField flow, kept for compat) ──────
+  // ── Attach PaymentMethod directly ────────────────────────────────────────
   Future<String?> attachCardToCustomer({
     required String customerId,
     required String paymentMethodId,
@@ -175,6 +167,11 @@ class StripeService {
   }
 
   // ── Pay for an order ──────────────────────────────────────────────────────
+  // FIX 1: Added _processingOrderIds to track in-progress payments
+  //         This prevents the same order from being submitted twice
+  //         even if the user taps Pay very quickly multiple times.
+  final Set<String> _processingOrderIds = {};
+
   Future<PaymentResult> payForOrder({
     required double amount,
     required String customerId,
@@ -182,7 +179,18 @@ class StripeService {
     required String orderId,
     String currency = 'usd',
   }) async {
+    // ── FIX 1: Prevent duplicate in-flight requests for the same order ──────
+    if (_processingOrderIds.contains(orderId)) {
+      debugPrint(
+        '⚠️  Payment already in progress for order $orderId — ignoring duplicate tap',
+      );
+      return PaymentResult.failure('Payment already in progress. Please wait.');
+    }
+
+    _processingOrderIds.add(orderId);
+
     try {
+      // ── FIX 2: Increased timeout — network drops shouldn't cause retries ──
       final res = await http
           .post(
             Uri.parse('$_baseUrl/payments/create-payment-intent'),
@@ -192,19 +200,27 @@ class StripeService {
               'currency': currency,
               'customerId': customerId,
               'paymentMethodId': paymentMethodId,
-              'orderId': orderId,
+              'orderId': orderId, // backend uses this as idempotency key
             }),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 20)); // FIX 2: was 15s, now 20s
 
       final data = jsonDecode(res.body);
+
+      // ── FIX 3: If backend says already paid, treat as success ─────────────
+      if (res.statusCode == 400 &&
+          (data['error'] as String?)?.contains('already been paid') == true) {
+        debugPrint('ℹ️  Order $orderId already paid — returning success');
+        return PaymentResult.success();
+      }
+
       if (res.statusCode != 200) {
         return PaymentResult.failure(data['error'] ?? 'Backend error');
       }
 
       final clientSecret = data['clientSecret'] as String;
 
-      // Confirm payment — no sheet, handles 3DS automatically
+      // Confirm payment — handles 3DS automatically
       await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: clientSecret,
         data: PaymentMethodParams.cardFromMethodId(
@@ -222,6 +238,9 @@ class StripeService {
     } catch (e) {
       debugPrint('payForOrder exception: $e');
       return PaymentResult.failure('Unexpected error. Please try again.');
+    } finally {
+      // ── Always remove from processing set when done ─────────────────────
+      _processingOrderIds.remove(orderId);
     }
   }
 }

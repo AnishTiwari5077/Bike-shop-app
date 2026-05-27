@@ -19,77 +19,81 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:provider/provider.dart';
 
-// ─── Lightweight background handler (does NOT re‑initialise NotificationService) ───
+// ─── Background handler ───────────────────────────────────────────────────────
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // 1. Minimal Firebase initialisation (required for background isolate)
   await Firebase.initializeApp();
 
-  // 2. Create a fresh local notifications plugin instance (lightweight)
-  final FlutterLocalNotificationsPlugin localNotifications =
-      FlutterLocalNotificationsPlugin();
+  debugPrint('Background message received: ${message.messageId}');
 
-  // 3. Initialise with basic settings (no callbacks needed)
-  const AndroidInitializationSettings androidSettings =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-  const DarwinInitializationSettings iosSettings =
-      DarwinInitializationSettings();
-  const InitializationSettings initSettings = InitializationSettings(
-    android: androidSettings,
-    iOS: iosSettings,
-  );
-  await localNotifications.initialize(settings: initSettings);
+  // ── CRITICAL FIX ──────────────────────────────────────────────────────────
+  // Only manually show a notification for pure DATA messages
+  // (message.notification == null means no notification payload).
+  //
+  // If your server sends a notification payload (which yours does — e.g. the
+  // payment success push), FCM + the OS will show it automatically.
+  // Calling localNotifications.show() on top of that causes DUPLICATE notifications.
+  //
+  // So: if message has a notification payload → do nothing, OS handles it.
+  //     if message is data-only → show it manually below.
+  // ─────────────────────────────────────────────────────────────────────────
+  if (message.data.isNotEmpty && message.notification == null) {
+    final FlutterLocalNotificationsPlugin localNotifications =
+        FlutterLocalNotificationsPlugin();
 
-  // 4. Ensure Android channel exists (must match the main app channel)
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'bike_shop_payments',
-    'Payment Notifications',
-    description: 'Notifications for payment and order updates',
-    importance: Importance.high,
-  );
-  await localNotifications
-      .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >()
-      ?.createNotificationChannel(channel);
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: DarwinInitializationSettings(),
+    );
+    await localNotifications.initialize(settings: initSettings);
 
-  // 5. Show the notification – ICON REMOVED to avoid resource not found error
-  const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-    'bike_shop_payments',
-    'Payment Notifications',
-    channelDescription: 'Notifications for payment and order updates',
-    importance: Importance.high,
-    priority: Priority.high,
-    // icon: 'ic_launcher', // <-- REMOVED – causes "resource not found"
-  );
-  const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
-  const NotificationDetails details = NotificationDetails(
-    android: androidDetails,
-    iOS: iosDetails,
-  );
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'bike_shop_payments',
+      'Payment Notifications',
+      description: 'Notifications for payment and order updates',
+      importance: Importance.high,
+    );
+    await localNotifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(channel);
 
-  final int id = DateTime.now().millisecondsSinceEpoch.remainder(1000000);
-  await localNotifications.show(
-    id: id,
-    title: message.notification?.title ?? 'Bike Shop',
-    body: message.notification?.body ?? '',
-    notificationDetails: details,
-  );
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'bike_shop_payments',
+          'Payment Notifications',
+          channelDescription: 'Notifications for payment and order updates',
+          importance: Importance.high,
+          priority: Priority.high,
+        );
+    const NotificationDetails details = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(),
+    );
 
-  debugPrint('Background FCM message shown: ${message.messageId}');
+    final int id = DateTime.now().millisecondsSinceEpoch.remainder(1000000);
+    await localNotifications.show(
+      id: id,
+      title: message.data['title'] ?? 'Bike Shop Update',
+      body: message.data['body'] ?? '',
+      notificationDetails: details,
+    );
+  }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ─── Image cache limit (prevents memory issues) ──────────────────────
-  PaintingBinding.instance.imageCache.maximumSize = 20; // was 100
-  PaintingBinding.instance.imageCache.maximumSizeBytes =
-      10 << 20; // 10MB, was 50MB
+  // ─── Image cache limit (prevents memory issues) ───────────────────────────
+  PaintingBinding.instance.imageCache.maximumSize = 20;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 10 << 20; // 10 MB
 
   await Firebase.initializeApp();
 
-  // Register lightweight background handler (must be before any other FCM calls)
+  // Must be registered before any other FCM calls
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   await NotificationService.instance.initialize();
@@ -108,27 +112,19 @@ class BikeShopApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // ─── Theme (must be first so Consumer below can access it) ────────
         ChangeNotifierProvider(create: (_) => ThemeViewModel()),
-
-        // ─── Feature providers (existing — names updated to new ViewModel
-        //     classes after Phase 3 migration; import paths unchanged) ─────
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => CartViewModel()),
         ChangeNotifierProvider(create: (_) => FavoritesViewModel()),
         ChangeNotifierProvider(create: (_) => OrderViewModel()),
         ChangeNotifierProvider(create: (_) => AddressViewModel()),
-        // ── PaymentViewModel auto-initializes when AuthViewModel signs in and resets on sign-out ───
         ChangeNotifierProxyProvider<AuthViewModel, PaymentViewModel>(
           create: (_) => PaymentViewModel(),
           update: (_, auth, payment) {
             if (payment != null) {
               if (auth.isSignedIn) {
                 if (!payment.isInitialized) {
-                  payment.initialize(
-                    email: auth.email,
-                    name: auth.displayName,
-                  );
+                  payment.initialize(email: auth.email, name: auth.displayName);
                 }
               } else {
                 if (payment.isInitialized) {
@@ -148,17 +144,13 @@ class BikeShopApp extends StatelessWidget {
           create: (_) => ProductViewModel()..loadProducts(),
         ),
       ],
-      // ─── Consumer wraps MaterialApp so ThemeViewModel changes rebuild it ─
       child: Consumer<ThemeViewModel>(
         builder: (context, themeViewModel, _) {
           return MaterialApp.router(
             title: 'Bike Shop',
             debugShowCheckedModeBanner: false,
-            // Light theme applied when ThemeMode.light or system prefers light
             theme: AppTheme.lightTheme,
-            // Dark theme applied when ThemeMode.dark or system prefers dark
             darkTheme: AppTheme.darkTheme,
-            // Controlled by ThemeViewModel (persisted via SharedPreferences)
             themeMode: themeViewModel.themeMode,
             routerConfig: appRouter,
           );
