@@ -144,6 +144,36 @@ class OrderViewModel extends BaseViewModel {
     }
   }
 
+  /// Manually sync orders on pull-to-refresh
+  Future<void> refreshOrders(String customerId) async {
+    try {
+      // 1. Force backend to check Stripe for any stuck pending orders
+      await StripeService.instance.recoverPendingOrders(customerId);
+
+      // 2. Fetch the true state of ALL orders from the backend to sync our local state.
+      // This catches orders that the webhook already marked as 'paid', but our app 
+      // still thinks are 'pending'.
+      final backendOrders = await StripeService.instance.fetchCustomerOrders(customerId);
+      
+      for (final bOrder in backendOrders) {
+        final bOrderId = bOrder['orderId'] as String?;
+        final bStatus = bOrder['status'] as String?;
+        if (bOrderId == null || bStatus == null) continue;
+        
+        final localOrder = getOrderById(bOrderId);
+        if (localOrder != null && localOrder.status == OrderStatus.pending) {
+          if (bStatus == 'paid' || bStatus == 'delivered') {
+            updateOrderStatus(bOrderId, OrderStatus.delivered);
+          } else if (bStatus == 'failed' || bStatus == 'canceled') {
+            updateOrderStatus(bOrderId, OrderStatus.cancelled);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️  refreshOrders error: $e');
+    }
+  }
+
   // ── SharedPreferences persistence ─────────────────────────────────────────
 
   Future<void> _loadOrders() async {
