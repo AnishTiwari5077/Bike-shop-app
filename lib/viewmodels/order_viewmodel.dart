@@ -45,9 +45,8 @@ class OrderViewModel extends BaseViewModel {
         order.status != OrderStatus.cancelled;
   }).toList();
 
-  List<Order> get completedOrders => _orders
-      .where((order) => order.status == OrderStatus.delivered)
-      .toList();
+  List<Order> get completedOrders =>
+      _orders.where((order) => order.status == OrderStatus.delivered).toList();
 
   bool get hasPendingOrders =>
       _orders.any((o) => o.status == OrderStatus.pending);
@@ -118,8 +117,9 @@ class OrderViewModel extends BaseViewModel {
     _isRecovering = true;
 
     try {
-      final recoveredIds =
-          await StripeService.instance.recoverPendingOrders(customerId);
+      final recoveredIds = await StripeService.instance.recoverPendingOrders(
+        customerId,
+      );
 
       for (final orderId in recoveredIds) {
         updateOrderStatus(orderId, OrderStatus.delivered);
@@ -135,9 +135,7 @@ class OrderViewModel extends BaseViewModel {
       }
 
       if (recoveredIds.isNotEmpty) {
-        debugPrint(
-          '🔄 Auto-recovered ${recoveredIds.length} pending orders',
-        );
+        debugPrint('🔄 Auto-recovered ${recoveredIds.length} pending orders');
       }
     } catch (e) {
       debugPrint('⚠️  recoverPendingOrders error: $e');
