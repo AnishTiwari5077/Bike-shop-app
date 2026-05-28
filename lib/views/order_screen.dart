@@ -2,6 +2,7 @@ import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/viewmodels/order_viewmodel.dart';
+import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -84,13 +85,22 @@ class _OrdersScreenState extends State<OrdersScreen>
       );
     }
 
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: Responsive.horizontalPadding(context),
-        vertical: 16,
+    return RefreshIndicator(
+      onRefresh: () async {
+        final customerId =
+            context.read<PaymentViewModel>().stripeCustomerId;
+        if (customerId != null) {
+          await context.read<OrderViewModel>().refreshOrders(customerId);
+        }
+      },
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(
+          horizontal: Responsive.horizontalPadding(context),
+          vertical: 16,
+        ),
+        itemCount: orders.length,
+        itemBuilder: (context, index) => _buildOrderCard(orders[index]),
       ),
-      itemCount: orders.length,
-      itemBuilder: (context, index) => _buildOrderCard(orders[index]),
     );
   }
 
