@@ -104,3 +104,18 @@ Future<void> recoverPendingOrders(String customerId) async {
 - ✅ All modules load without import errors
 - ✅ No new npm dependencies required
 - ✅ Idempotency guards prevent duplicate emails/updates across all 3 paths
+
+## Frontend App Fixes (Offline Payment Reliability)
+
+### 1. [MODIFY] [order_viewmodel.dart](file:///f:/flutter-bike-shop/bike_shop/lib/viewmodels/order_viewmodel.dart)
+- Added `checkAndRecover()` method to proactively check if the device is online and recover pending orders immediately.
+- Updated `startConnectivityMonitor()` to call `checkAndRecover()` on startup rather than only waiting for network *changes*.
+- Added a 2-second delay in the `onConnectivityChanged` listener before calling the recovery HTTP request, ensuring DNS and routing have time to settle after the connection event fires.
+
+### 2. [MODIFY] [order_screen.dart](file:///f:/flutter-bike-shop/bike_shop/lib/views/order_screen.dart)
+- Wrapped the active/completed orders list in a `RefreshIndicator`.
+- Users can now manually pull-to-refresh to trigger `checkAndRecover()` and immediately move a stuck pending order to completed if the network is back online.
+
+### 3. [MODIFY] [checkout_screen.dart](file:///f:/flutter-bike-shop/bike_shop/lib/views/checkout_screen.dart)
+- `CheckoutScreen` now actively watches `OrdersProvider`.
+- If an order is successfully recovered in the background (status becomes `delivered`), the screen automatically updates to prevent double payments and shows the Payment Success sheet immediately.

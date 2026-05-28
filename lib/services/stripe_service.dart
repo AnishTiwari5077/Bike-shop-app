@@ -236,11 +236,11 @@ class StripeService {
 
       final data = jsonDecode(res.body);
 
-      // Backend says already paid → treat as success
+      // Backend says already paid → return already paid result
       if (res.statusCode == 400 &&
           (data['error'] as String?)?.contains('already been paid') == true) {
-        debugPrint('ℹ️  Order $orderId already paid — returning success');
-        return PaymentResult.success();
+        debugPrint('ℹ️  Order $orderId already paid in MongoDB');
+        return PaymentResult.alreadyPaid('This order has already been paid. Please refresh your orders.');
       }
 
       if (res.statusCode != 200) {
@@ -278,13 +278,14 @@ class StripeService {
           return PaymentResult.failure(msg.isNotEmpty ? msg : 'Payment failed');
         }
 
-        debugPrint(
-          'ℹ️  PaymentIntent already succeeded for order $orderId — treating as success',
-        );
-        // Fall through to _confirmOrderPaid below
+        debugPrint('ℹ️  PaymentIntent already succeeded for order $orderId');
+        // Force MongoDB to sync right now
+        await _confirmOrderPaid(orderId);
+        
+        return PaymentResult.alreadyPaid('This order has already been paid. Please refresh your orders.');
       }
 
-      // Payment confirmed (or was already confirmed on a prior attempt).
+      // Payment confirmed normally.
       // Update MongoDB status directly — don't rely solely on the webhook.
       await _confirmOrderPaid(orderId);
 
@@ -322,6 +323,27 @@ class StripeService {
       return [];
     } catch (e) {
       debugPrint('⚠️  recoverPendingOrders exception: $e');
+      return [];
+    }
+  }
+
+  // ── Fetch all orders for a customer ───────────────────────────────────────
+  Future<List<Map<String, dynamic>>> fetchCustomerOrders(String customerId) async {
+    try {
+      final res = await http
+          .get(
+            Uri.parse('$_baseUrl/payments/orders/$customerId'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return List<Map<String, dynamic>>.from(data['orders'] ?? []);
+      }
+      return [];
+    } catch (e) {
+      debugPrint('⚠️  fetchCustomerOrders exception: $e');
       return [];
     }
   }
@@ -363,11 +385,19 @@ class StripeCard {
 
 class PaymentResult {
   final bool isSuccess;
+  final bool isAlreadyPaid;
   final String? errorMessage;
 
-  const PaymentResult._({required this.isSuccess, this.errorMessage});
+  const PaymentResult._({
+    required this.isSuccess,
+    this.isAlreadyPaid = false,
+    this.errorMessage,
+  });
 
   factory PaymentResult.success() => const PaymentResult._(isSuccess: true);
+
+  factory PaymentResult.alreadyPaid(String message) =>
+      PaymentResult._(isSuccess: false, isAlreadyPaid: true, errorMessage: message);
 
   factory PaymentResult.failure(String message) =>
       PaymentResult._(isSuccess: false, errorMessage: message);
