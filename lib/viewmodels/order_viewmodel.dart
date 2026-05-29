@@ -129,7 +129,7 @@ class OrderViewModel extends BaseViewModel {
         if (order != null) {
           await NotificationService.instance.showPaymentSuccessNotification(
             orderId: orderId,
-            amount: order.totalWithTax,
+            amount: order.totalAmount,
           );
         }
       }

@@ -227,7 +227,6 @@ class OrderDetailScreen extends StatelessWidget {
             '\$${order.totalAmount.toStringAsFixed(2)}',
           ),
           _buildSummaryRow(context, 'Shipping', 'Free'),
-          _buildSummaryRow(context, 'Tax', '\$0.00'),
           Divider(
             color: colorScheme.onSurface.withValues(alpha: 0.24),
             height: 24,

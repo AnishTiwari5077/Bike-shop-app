@@ -198,9 +198,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Material(
-                          color: Colors.transparent,
+                          // FIX Issue 1: explicit splash/highlight so ink is visible
+                          // on the card background, not invisible on transparent.
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(12),
                           child: ListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             leading: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
@@ -394,17 +399,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildGoogleSignInButton(AuthProvider auth) {
     return GestureDetector(
       onTap: () async {
+        // FIX Issue 5: capture messenger before async gap so BuildContext
+        // is not used across an async boundary.
+        final messenger = ScaffoldMessenger.of(context);
         final success = await auth.signInWithGoogle();
-        if (success && mounted) {
+        if (!mounted) return;
+        if (success) {
           // PaymentViewModel initializes automatically via ProxyProvider in main.dart
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             SnackBar(
               content: Text('Welcome, ${auth.displayName}!'),
               backgroundColor: Colors.green,
             ),
           );
-        } else if (!success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+        } else {
+          messenger.showSnackBar(
             const SnackBar(
               content: Text('Sign-in cancelled or failed.'),
               backgroundColor: Colors.red,
@@ -540,6 +549,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onTap,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    // FIX Issue 1: use cardColor so ListTile ink splashes are visible (not
+    // transparent), matching the container background.
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -547,9 +558,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
-        color: Colors.transparent,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         child: ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -603,12 +617,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
+              // FIX Issue 5: capture messenger before async gap so
+              // BuildContext is not used across an async boundary.
+              final messenger = ScaffoldMessenger.of(context);
               await auth.signOut();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Logged out successfully')),
-                );
-              }
+              if (!mounted) return;
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Logged out successfully')),
+              );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Logout'),
