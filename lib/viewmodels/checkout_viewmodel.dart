@@ -60,8 +60,6 @@ class CheckoutViewModel extends BaseViewModel {
     // long-running network call.
     orderVM.updateOrderStatus(order.id, OrderStatus.delivered);
 
-    // FIX: pass customerName, customerEmail, and items so MongoDB stores the
-    // full order document instead of empty strings and an empty array.
     final result = await paymentVM.payForOrder(
       amount: order.totalAmount,
       orderId: order.id,
@@ -75,6 +73,8 @@ class CheckoutViewModel extends BaseViewModel {
               'title': i.product.title,
               'price': i.product.price,
               'quantity': i.quantity,
+              // totalPrice = unit price × quantity; useful for receipts
+              'totalPrice': i.totalPrice,
             },
           )
           .toList(),
@@ -86,13 +86,13 @@ class CheckoutViewModel extends BaseViewModel {
       // ── Add to in-app notification list ─────────────────────────────────
       notificationVM.addNotification(
         'Payment Successful',
-        'Order #${order.id.substring(0, 8)} — \$${order.totalWithTax.toStringAsFixed(2)} charged.',
+        'Order #${order.id.substring(0, 8)} — \$${order.totalAmount.toStringAsFixed(2)} charged.',
       );
 
       // ── Push notification ────────────────────────────────────────────────
       await NotificationService.instance.showPaymentSuccessNotification(
         orderId: order.id,
-        amount: order.totalWithTax,
+        amount: order.totalAmount,
       );
 
       // ── Email confirmation ───────────────────────────────────────────────
@@ -101,7 +101,7 @@ class CheckoutViewModel extends BaseViewModel {
           email: authVM.email,
           name: authVM.displayName,
           orderId: order.id,
-          amount: order.totalWithTax,
+          amount: order.totalAmount,
           items: order.items
               .map(
                 (i) => {

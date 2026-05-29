@@ -28,17 +28,23 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  Future<void> _processCheckout(BuildContext context) async {
+  // FIX Issue 3: method no longer takes a BuildContext parameter.
+  // Using State.context (this.context) means the State.mounted check properly
+  // guards every context access — the linter warning is resolved.
+  Future<void> _processCheckout() async {
     final cart = context.read<CartProvider>();
     final ordersProvider = context.read<OrdersProvider>();
     final checkoutVM = context.read<CheckoutViewModel>();
 
     if (cart.isEmpty) return;
 
+    // Capture theme data BEFORE the await — context must not be used
+    // across async gaps even with a mounted guard.
+    final colorScheme = Theme.of(context).colorScheme;
+
     await checkoutVM.createOrder(cart, ordersProvider);
 
     if (!mounted) return;
-    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -396,7 +402,7 @@ class _CartScreenState extends State<CartScreen> {
                 child: ElevatedButton(
                   onPressed: cart.isLoading
                       ? null
-                      : () => _processCheckout(context),
+                      : () => _processCheckout(),
                   child: cart.isLoading
                       ? const SizedBox(
                           height: 24,

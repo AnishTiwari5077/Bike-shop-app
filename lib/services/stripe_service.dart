@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:bike_shop/config/api_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -276,8 +279,20 @@ class StripeService {
                 msg.toLowerCase().contains('previously confirmed'));
 
         if (!alreadySucceeded) {
+          // FIX Issue 6: detect network-related Stripe exceptions and surface
+          // a friendly message instead of the raw IOException dump.
+          final isNetworkError =
+              msg.toLowerCase().contains('ioexception') ||
+              msg.toLowerCase().contains('failed to connect') ||
+              msg.toLowerCase().contains('connection') ||
+              msg.toLowerCase().contains('socketexception');
+
+          final userMessage = isNetworkError
+              ? 'Connection interrupted. Please check your internet and try again.'
+              : (msg.isNotEmpty ? msg : 'Payment failed');
+
           debugPrint('StripeException: $msg');
-          return PaymentResult.failure(msg.isNotEmpty ? msg : 'Payment failed');
+          return PaymentResult.failure(userMessage);
         }
 
         debugPrint('ℹ️  PaymentIntent already succeeded for order $orderId');
@@ -294,6 +309,18 @@ class StripeService {
       await _confirmOrderPaid(orderId);
 
       return PaymentResult.success();
+    } on SocketException {
+      // FIX Issue 6: device has no network connectivity at all
+      debugPrint('payForOrder: no internet (SocketException)');
+      return PaymentResult.failure(
+        'Connection interrupted. Please check your internet and try again.',
+      );
+    } on TimeoutException {
+      // FIX Issue 6: request timed out (server unreachable)
+      debugPrint('payForOrder: request timed out');
+      return PaymentResult.failure(
+        'Request timed out. Please check your connection and try again.',
+      );
     } catch (e) {
       debugPrint('payForOrder exception: $e');
       return PaymentResult.failure('Unexpected error. Please try again.');

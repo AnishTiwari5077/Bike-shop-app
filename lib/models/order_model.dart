@@ -36,9 +36,11 @@ class Order {
   final OrderStatus status; // pending, processing, shipped, delivered, cancelled
   final String? trackingNumber;
 
-  static const double taxRate = 0.08;
-  double get taxAmount => totalAmount * taxRate;
-  double get totalWithTax => totalAmount + taxAmount;
+  // Calculate original subtotal from items
+  double get subtotal => items.fold(0.0, (sum, item) => sum + item.totalPrice);
+
+  // Calculate discount based on subtotal
+  double get discount => subtotal > 100.0 ? subtotal * 0.10 : 0.0;
 
   Order({
     required this.id,

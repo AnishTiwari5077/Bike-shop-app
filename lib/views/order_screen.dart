@@ -87,8 +87,7 @@ class _OrdersScreenState extends State<OrdersScreen>
 
     return RefreshIndicator(
       onRefresh: () async {
-        final customerId =
-            context.read<PaymentViewModel>().stripeCustomerId;
+        final customerId = context.read<PaymentViewModel>().stripeCustomerId;
         if (customerId != null) {
           await context.read<OrderViewModel>().refreshOrders(customerId);
         }

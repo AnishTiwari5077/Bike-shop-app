@@ -296,7 +296,8 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        if (trailing != null) trailing!,
+        // FIX Issue 4: use null-aware element instead of if-null-check + bang
+        ?trailing,
       ],
     );
   }
@@ -561,9 +562,7 @@ class _PriceBreakdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final subtotal = order.totalAmount;
-    final tax = order.taxAmount;
-    final total = order.totalWithTax;
+    final total = order.totalAmount;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -572,7 +571,16 @@ class _PriceBreakdown extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _row(context, 'Subtotal', '\$${subtotal.toStringAsFixed(2)}'),
+          _row(context, 'Subtotal', '\$${order.subtotal.toStringAsFixed(2)}'),
+          if (order.discount > 0) ...[
+            const SizedBox(height: 8),
+            _row(
+              context,
+              'Discount',
+              '-\$${order.discount.toStringAsFixed(2)}',
+              valueColor: Colors.redAccent,
+            ),
+          ],
           const SizedBox(height: 8),
           _row(
             context,
@@ -580,8 +588,6 @@ class _PriceBreakdown extends StatelessWidget {
             'Free',
             valueColor: const Color(0xFF10B981),
           ),
-          const SizedBox(height: 8),
-          _row(context, 'Tax (8%)', '\$${tax.toStringAsFixed(2)}'),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             // FIX: was Colors.white12
@@ -666,7 +672,7 @@ class _PayButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final total = order.totalWithTax;
+    final total = order.totalAmount;
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -809,7 +815,9 @@ class _PaymentSuccessSheet extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '\$${(order.totalAmount * 1.08).toStringAsFixed(2)} charged',
+              // BUG FIX: was `order.totalAmount * 1.08` (manual recalc),
+              // now uses order.totalAmount which is the single source of truth
+              '\$${order.totalAmount.toStringAsFixed(2)} charged',
               style: const TextStyle(
                 color: AppTheme.accentBlue,
                 fontSize: 22,
