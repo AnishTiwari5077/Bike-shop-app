@@ -240,7 +240,9 @@ class StripeService {
       if (res.statusCode == 400 &&
           (data['error'] as String?)?.contains('already been paid') == true) {
         debugPrint('ℹ️  Order $orderId already paid in MongoDB');
-        return PaymentResult.alreadyPaid('This order has already been paid. Please refresh your orders.');
+        return PaymentResult.alreadyPaid(
+          'This order has already been paid. Please refresh your orders.',
+        );
       }
 
       if (res.statusCode != 200) {
@@ -281,8 +283,10 @@ class StripeService {
         debugPrint('ℹ️  PaymentIntent already succeeded for order $orderId');
         // Force MongoDB to sync right now
         await _confirmOrderPaid(orderId);
-        
-        return PaymentResult.alreadyPaid('This order has already been paid. Please refresh your orders.');
+
+        return PaymentResult.alreadyPaid(
+          'This order has already been paid. Please refresh your orders.',
+        );
       }
 
       // Payment confirmed normally.
@@ -328,7 +332,9 @@ class StripeService {
   }
 
   // ── Fetch all orders for a customer ───────────────────────────────────────
-  Future<List<Map<String, dynamic>>> fetchCustomerOrders(String customerId) async {
+  Future<List<Map<String, dynamic>>> fetchCustomerOrders(
+    String customerId,
+  ) async {
     try {
       final res = await http
           .get(
@@ -396,8 +402,11 @@ class PaymentResult {
 
   factory PaymentResult.success() => const PaymentResult._(isSuccess: true);
 
-  factory PaymentResult.alreadyPaid(String message) =>
-      PaymentResult._(isSuccess: false, isAlreadyPaid: true, errorMessage: message);
+  factory PaymentResult.alreadyPaid(String message) => PaymentResult._(
+    isSuccess: false,
+    isAlreadyPaid: true,
+    errorMessage: message,
+  );
 
   factory PaymentResult.failure(String message) =>
       PaymentResult._(isSuccess: false, errorMessage: message);
