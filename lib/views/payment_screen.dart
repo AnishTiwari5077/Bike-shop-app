@@ -17,12 +17,7 @@ class PaymentMethodsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Payment Methods')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _addCard(context, provider),
-        backgroundColor: AppTheme.accentBlue,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Card', style: TextStyle(color: Colors.white)),
-      ),
+
       body: provider.isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppTheme.accentBlue),
@@ -99,9 +94,7 @@ class PaymentMethodsScreen extends StatelessWidget {
     if (!provider.isInitialized) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Payment service not ready. Please sign in first.',
-          ),
+          content: Text('Payment service not ready. Please sign in first.'),
           backgroundColor: Colors.orange,
         ),
       );

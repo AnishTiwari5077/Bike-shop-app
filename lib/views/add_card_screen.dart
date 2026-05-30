@@ -7,11 +7,6 @@ import 'package:provider/provider.dart';
 class AddCardScreen extends StatefulWidget {
   const AddCardScreen({super.key});
 
-  // FIX: was Navigator.push — now GoRouter context.push
-  // Callers: context.push('/add-card') and await the result via a completer
-  // or simply reload cards after pop. Since this screen returns bool via
-  // Navigator.pop(context, true/false), we keep that pattern but open via
-  // GoRouter so the route is registered.
   static Future<bool> show(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
