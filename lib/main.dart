@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:bike_shop/config/router.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/viewmodels/address_viewmodel.dart';
@@ -12,8 +14,10 @@ import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 import 'package:bike_shop/viewmodels/product_viewmodel.dart';
 import 'package:bike_shop/services/notification_service.dart';
 import 'package:bike_shop/viewmodels/theme_viewmodel.dart';
+import 'package:bike_shop/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -23,7 +27,7 @@ import 'package:provider/provider.dart';
 // ─── Background handler ───────────────────────────────────────────────────────
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   debugPrint('Background message received: ${message.messageId}');
 
@@ -93,16 +97,21 @@ void main() async {
   PaintingBinding.instance.imageCache.maximumSize = 20;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 10 << 20; // 10 MB
 
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Must be registered before any other FCM calls
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  await NotificationService.instance.initialize();
+  if (!kIsWeb) {
+    // Must be registered before any other FCM calls
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+    // Notifications and FCM might throw JS errors on Web if missing service workers
+    await NotificationService.instance.initialize();
+  }
 
   Stripe.publishableKey =
       'pk_test_51SXvBHHKrFDpSpIkVxuXl5nyLySIPsmOBh6EOuy8Ih2xXqdFY3KdaSy0ga75PTjAEpG3wQtaGfKZFnyLr0WOwFD5002qz17NV2';
-  await Stripe.instance.applySettings();
+  if (!kIsWeb) {
+    await Stripe.instance.applySettings();
+  }
 
   runApp(const BikeShopApp());
 }
@@ -152,8 +161,13 @@ class BikeShopApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
-        ChangeNotifierProxyProvider4<AuthViewModel, PaymentViewModel,
-            OrderViewModel, NotificationViewModel, CheckoutViewModel>(
+        ChangeNotifierProxyProvider4<
+          AuthViewModel,
+          PaymentViewModel,
+          OrderViewModel,
+          NotificationViewModel,
+          CheckoutViewModel
+        >(
           create: (_) => CheckoutViewModel(),
           update: (_, auth, payment, order, notif, checkout) =>
               checkout!..update(auth, payment, order, notif),
@@ -174,6 +188,14 @@ class BikeShopApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeViewModel.themeMode,
             routerConfig: appRouter,
+            scrollBehavior: const MaterialScrollBehavior().copyWith(
+              dragDevices: {
+                PointerDeviceKind.mouse,
+                PointerDeviceKind.touch,
+                PointerDeviceKind.stylus,
+                PointerDeviceKind.unknown,
+              },
+            ),
           );
         },
       ),

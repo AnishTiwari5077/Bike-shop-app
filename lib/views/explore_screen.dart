@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/category_model.dart';
@@ -370,59 +371,49 @@ class DealsTab extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  '02:45:30',
-                  style: TextStyle(
-                    color: Color(0xFFEF4444),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
+              const _FlashSaleTimer(),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'Hot Deals',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 22 * Responsive.fontScale(context),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: Responsive.gridColumns(context),
-            childAspectRatio: Responsive.value(
-              context,
-              mobile: 0.75,
-              tablet: 0.78,
-              desktop: 0.80,
-            ),
-            crossAxisSpacing: Responsive.value(
-              context,
-              mobile: 12.0,
-              tablet: 16.0,
-            ),
-            mainAxisSpacing: Responsive.value(
-              context,
-              mobile: 12.0,
-              tablet: 16.0,
-            ),
-          ),
-          itemCount: deals.length,
-          itemBuilder: (context, index) {
-            final product = deals[index];
-            return _buildDealCard(context, product);
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: Responsive.gridColumnsFromConstraints(constraints),
+                childAspectRatio: Responsive.valueFromConstraints(
+                  constraints,
+                  mobile: 0.75,
+                  tablet: 0.78,
+                  desktop: 0.80,
+                ),
+                crossAxisSpacing: Responsive.valueFromConstraints(
+                  constraints,
+                  mobile: 12.0,
+                  tablet: 16.0,
+                ),
+                mainAxisSpacing: Responsive.valueFromConstraints(
+                  constraints,
+                  mobile: 12.0,
+                  tablet: 16.0,
+                ),
+              ),
+              itemCount: deals.length,
+              itemBuilder: (context, index) {
+                final product = deals[index];
+                return _buildDealCard(context, product);
+              },
+            );
           },
         ),
       ],
@@ -488,14 +479,18 @@ class DealsTab extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            '\$${(product.price * 1.5).toStringAsFixed(2)}',
-                            style: TextStyle(
-                              color: colorScheme.onSurface.withValues(
-                                alpha: 0.38,
+                          Flexible(
+                            child: Text(
+                              '\$${(product.price * 1.5).toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.38,
+                                ),
+                                fontSize: 12,
+                                decoration: TextDecoration.lineThrough,
                               ),
-                              fontSize: 12,
-                              decoration: TextDecoration.lineThrough,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -525,6 +520,65 @@ class DealsTab extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FlashSaleTimer extends StatefulWidget {
+  const _FlashSaleTimer();
+
+  @override
+  State<_FlashSaleTimer> createState() => _FlashSaleTimerState();
+}
+
+class _FlashSaleTimerState extends State<_FlashSaleTimer> {
+  late Timer _timer;
+  Duration _timeLeft = const Duration(hours: 2, minutes: 45, seconds: 30);
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_timeLeft.inSeconds > 0) {
+        setState(() {
+          _timeLeft -= const Duration(seconds: 1);
+        });
+      } else {
+        _timer.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(_timeLeft.inHours);
+    final minutes = twoDigits(_timeLeft.inMinutes.remainder(60));
+    final seconds = twoDigits(_timeLeft.inSeconds.remainder(60));
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '$hours:$minutes:$seconds',
+        style: const TextStyle(
+          color: Color(0xFFEF4444),
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
         ),
       ),
     );
@@ -573,9 +627,12 @@ class NewArrivalsTab extends StatelessWidget {
         vertical: 16,
       ),
       children: [
-        const Text(
+        Text(
           'Just Added',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 22 * Responsive.fontScale(context),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 16),
         ...newProducts.map((product) => _buildNewArrivalCard(context, product)),

@@ -1,3 +1,4 @@
+import 'package:bike_shop/config/responsive.dart';
 import 'package:flutter/material.dart';
 
 class BikePromo extends StatelessWidget {
@@ -51,7 +52,7 @@ class BikePromo extends StatelessWidget {
                         Text(
                           title,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 16 * Responsive.fontScale(context),
                             fontWeight: FontWeight.w500,
                             color: Colors.white70,
                           ),
@@ -60,7 +61,7 @@ class BikePromo extends StatelessWidget {
                         Text(
                           discount,
                           style: TextStyle(
-                            fontSize: 36,
+                            fontSize: 36 * Responsive.fontScale(context),
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),

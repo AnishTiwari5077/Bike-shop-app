@@ -50,70 +50,75 @@ class ProductGrid extends StatelessWidget {
       );
     }
 
-    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
-    final mobileRatio = textScale > 1.1 ? 0.60 : 0.70;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // ✅ Uses available width (not full screen width).
+        // Correct when this widget lives inside a NavigationRail body,
+        // a Dialog, or any other constrained parent.
+        final cols = Responsive.gridColumnsFromConstraints(constraints);
+        final pad  = Responsive.horizontalPaddingFromConstraints(constraints);
+        final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+        final mobileRatio = textScale > 1.1 ? 0.60 : 0.70;
+        final aspectRatio = Responsive.valueFromConstraints<double>(
+          constraints,
+          mobile: mobileRatio,
+          tablet: 0.72,
+          desktop: 0.78,
+        );
+        final spacing = Responsive.valueFromConstraints<double>(
+          constraints,
+          mobile: 16.0,
+          tablet: 20.0,
+        );
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: Responsive.horizontalPadding(context),
-      ),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: Responsive.gridColumns(context),
-          childAspectRatio: Responsive.value(
-            context,
-            mobile: mobileRatio,
-            tablet: 0.72,
-            desktop: 0.78,
-          ),
-          crossAxisSpacing: Responsive.value(
-            context,
-            mobile: 16.0,
-            tablet: 20.0,
-          ),
-          mainAxisSpacing: Responsive.value(
-            context,
-            mobile: 16.0,
-            tablet: 20.0,
-          ),
-        ),
-        itemCount: products.length,
-        itemBuilder: (context, index) {
-          final product = products[index];
-          return GridViewWidget(
-            title: product.title,
-            subtitle: product.subtitle,
-            price: '\$${product.price.toStringAsFixed(2)}',
-            image: product.imageUrl,
-            rating: product.rating,
-            isFavorite: favoritesProvider.isFavorite(product.id),
-            isNetworkImage: true, // 👈 ADD THIS LINE - FIXES THE ISSUE!
-            onTap: () {
-              context.push('/product', extra: product);
-            },
-            onAddToCart: () {
-              cartProvider.addToCart(product);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${product.title} added to cart'),
-                  duration: const Duration(seconds: 2),
-                  action: SnackBarAction(
-                    label: 'VIEW',
-                    onPressed: () {
-                      context.push('/cart');
-                    },
-                  ),
-                ),
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: pad),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
+              childAspectRatio: aspectRatio,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
+            ),
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return GridViewWidget(
+                title: product.title,
+                subtitle: product.subtitle,
+                price: '\$${product.price.toStringAsFixed(2)}',
+                image: product.imageUrl,
+                rating: product.rating,
+                isFavorite: favoritesProvider.isFavorite(product.id),
+                isNetworkImage: true,
+                onTap: () {
+                  context.push('/product', extra: product);
+                },
+                onAddToCart: () {
+                  cartProvider.addToCart(product);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${product.title} added to cart'),
+                      duration: const Duration(seconds: 2),
+                      action: SnackBarAction(
+                        label: 'VIEW',
+                        onPressed: () {
+                          context.push('/cart');
+                        },
+                      ),
+                    ),
+                  );
+                },
+                onFavorite: () {
+                  favoritesProvider.toggleFavorite(product.id);
+                },
               );
             },
-            onFavorite: () {
-              favoritesProvider.toggleFavorite(product.id);
-            },
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

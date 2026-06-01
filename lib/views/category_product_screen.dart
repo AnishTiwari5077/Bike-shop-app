@@ -38,33 +38,38 @@ class CategoryProductsScreen extends StatelessWidget {
       ),
       body: categoryProducts.isEmpty
           ? _buildEmpty(context, categoryName)
-          : GridView.builder(
-              padding: EdgeInsets.symmetric(
-                horizontal: Responsive.horizontalPadding(context),
-                vertical: 16,
-              ),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: Responsive.gridColumns(context),
-                childAspectRatio: Responsive.value(
-                  context,
-                  mobile: 0.75,
-                  tablet: 0.78,
-                  desktop: 0.80,
-                ),
-                crossAxisSpacing: Responsive.value(
-                  context,
-                  mobile: 12.0,
-                  tablet: 16.0,
-                ),
-                mainAxisSpacing: Responsive.value(
-                  context,
-                  mobile: 12.0,
-                  tablet: 16.0,
-                ),
-              ),
-              itemCount: categoryProducts.length,
-              itemBuilder: (context, index) =>
-                  _CategoryProductCard(product: categoryProducts[index]),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final pad = Responsive.horizontalPaddingFromConstraints(constraints);
+                return GridView.builder(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: pad,
+                    vertical: 16,
+                  ),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: Responsive.gridColumnsFromConstraints(constraints),
+                    childAspectRatio: Responsive.valueFromConstraints(
+                      constraints,
+                      mobile: 0.75,
+                      tablet: 0.78,
+                      desktop: 0.80,
+                    ),
+                    crossAxisSpacing: Responsive.valueFromConstraints(
+                      constraints,
+                      mobile: 12.0,
+                      tablet: 16.0,
+                    ),
+                    mainAxisSpacing: Responsive.valueFromConstraints(
+                      constraints,
+                      mobile: 12.0,
+                      tablet: 16.0,
+                    ),
+                  ),
+                  itemCount: categoryProducts.length,
+                  itemBuilder: (context, index) =>
+                      _CategoryProductCard(product: categoryProducts[index]),
+                );
+              },
             ),
     );
   }
@@ -141,7 +146,9 @@ class _CategoryProductCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(
+                Responsive.value(context, mobile: 10.0, tablet: 12.0, desktop: 14.0),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -149,7 +156,7 @@ class _CategoryProductCard extends StatelessWidget {
                     product.title,
                     style: TextStyle(
                       color: cs.onSurface,
-                      fontSize: 14,
+                      fontSize: 14 * Responsive.fontScale(context),
                       fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
@@ -158,9 +165,9 @@ class _CategoryProductCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '\$${product.price.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.accentBlue,
-                      fontSize: 16,
+                      fontSize: 16 * Responsive.fontScale(context),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

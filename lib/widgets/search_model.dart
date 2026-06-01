@@ -4,6 +4,7 @@
 //   - Local state and debouncing removed
 //   - Recent searches populated from SharedPreferences via ProductsProvider
 
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/viewmodels/product_viewmodel.dart';
@@ -224,14 +225,17 @@ class _SearchModalState extends State<SearchModal> {
               Text(
                 'Recent Searches',
                 style: TextStyle(
-                  color: colorScheme.onSurface,
-                  fontSize: 18,
+                  fontSize: 18 * Responsive.fontScale(context),
                   fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
               ),
               TextButton(
                 onPressed: () => provider.clearRecentSearches(),
-                child: const Text('Clear All', style: TextStyle(color: Colors.red)),
+                child: const Text(
+                  'Clear All',
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
             ],
           ),
@@ -319,9 +323,9 @@ class _SearchModalState extends State<SearchModal> {
                   Text(
                     product.title,
                     style: TextStyle(
+                      fontSize: 18 * Responsive.fontScale(context),
+                      fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

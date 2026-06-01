@@ -220,7 +220,7 @@ class WishListScreen extends StatelessWidget {
                       product.title,
                       style: TextStyle(
                         color: colorScheme.onSurface,
-                        fontSize: 16,
+                        fontSize: 16 * Responsive.fontScale(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -229,9 +229,9 @@ class WishListScreen extends StatelessWidget {
 
                     Text(
                       '\$${product.price}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.greenAccent,
-                        fontSize: 15,
+                        fontSize: 15 * Responsive.fontScale(context),
                         fontWeight: FontWeight.bold,
                       ),
                     ),

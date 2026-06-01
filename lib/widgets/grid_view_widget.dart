@@ -67,8 +67,8 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                 height: Responsive.value(
                   context,
                   mobile: 130.0,
-                  tablet: 150.0,
-                  desktop: 170.0,
+                  tablet: 155.0,
+                  desktop: 180.0,
                 ),
                 width: double.infinity,
                 child: Stack(
@@ -119,7 +119,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                               color: widget.isFavorite
                                   ? Colors.red
                                   : Theme.of(context).colorScheme.onSurface,
-                              size: 20,
+                              size: Responsive.value(context, mobile: 18.0, tablet: 20.0, desktop: 22.0),
                             ),
                           ),
                         ),
@@ -131,7 +131,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
               // ---------------- CONTENT ----------------
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(Responsive.value(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -193,7 +193,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                               widget.price,
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 16,
+                                fontSize: 16 * Responsive.fontScale(context),
                                 fontWeight: FontWeight.bold,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -204,15 +204,15 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                             GestureDetector(
                               onTap: widget.onAddToCart,
                               child: Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: EdgeInsets.all(Responsive.value(context, mobile: 7.0, tablet: 8.0, desktop: 9.0)),
                                 decoration: BoxDecoration(
                                   color: AppTheme.accentBlue,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.add_shopping_cart,
                                   color: Colors.white,
-                                  size: 18,
+                                  size: Responsive.value(context, mobile: 16.0, tablet: 18.0, desktop: 20.0),
                                 ),
                               ),
                             ),

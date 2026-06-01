@@ -135,7 +135,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                     'Order #${order.id.substring(0, 8)}',
                     style: TextStyle(
                       color: colorScheme.onSurface,
-                      fontSize: 16,
+                      fontSize: 16 * Responsive.fontScale(context),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -163,7 +163,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                     '\$${order.totalAmount.toStringAsFixed(2)}',
                     style: TextStyle(
                       color: AppTheme.accentBlue,
-                      fontSize: 18,
+                      fontSize: 18 * Responsive.fontScale(context),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

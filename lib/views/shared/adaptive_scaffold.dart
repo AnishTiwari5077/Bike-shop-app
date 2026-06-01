@@ -39,7 +39,10 @@ class AdaptiveScaffold extends StatelessWidget {
     required this.body,
     this.appBar,
     this.floatingActionButton,
-  });
+  }) : assert(
+         destinations.length >= 2,
+         'BottomNavigationBar requires at least 2 destinations.',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +54,9 @@ class AdaptiveScaffold extends StatelessWidget {
     if (isMobile) {
       return Scaffold(
         appBar: appBar,
-        body: body,
+        body: SafeArea(
+          child: body,
+        ), // Prevents content bleeding into system bars
         floatingActionButton: floatingActionButton,
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: currentIndex,
@@ -79,37 +84,44 @@ class AdaptiveScaffold extends StatelessWidget {
     return Scaffold(
       appBar: appBar,
       floatingActionButton: floatingActionButton,
-      body: Row(
-        children: [
-          NavigationRail(
-            selectedIndex: currentIndex,
-            onDestinationSelected: onDestinationSelected,
+      body: SafeArea(
+        child: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: currentIndex,
+              onDestinationSelected: onDestinationSelected,
 
-            // ✅ FIX: NEVER combine extended + labelType (caused your crash)
-            extended: isDesktop,
-            labelType: NavigationRailLabelType.none,
+              // ✅ FIXED: extended is only true when labelType is none
+              extended: isDesktop,
+              labelType: isDesktop
+                  ? NavigationRailLabelType.none
+                  : NavigationRailLabelType
+                        .all, // Shows compact labels on tablet
 
-            backgroundColor: theme.colorScheme.surface,
-            selectedIconTheme: IconThemeData(color: theme.colorScheme.primary),
-            unselectedIconTheme: IconThemeData(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              backgroundColor: theme.colorScheme.surface,
+              selectedIconTheme: IconThemeData(
+                color: theme.colorScheme.primary,
+              ),
+              unselectedIconTheme: IconThemeData(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+
+              destinations: destinations
+                  .map(
+                    (d) => NavigationRailDestination(
+                      icon: Icon(d.icon),
+                      selectedIcon: Icon(d.selectedIcon ?? d.icon),
+                      label: Text(d.label),
+                    ),
+                  )
+                  .toList(),
             ),
 
-            destinations: destinations
-                .map(
-                  (d) => NavigationRailDestination(
-                    icon: Icon(d.icon),
-                    selectedIcon: Icon(d.selectedIcon ?? d.icon),
-                    label: Text(d.label),
-                  ),
-                )
-                .toList(),
-          ),
+            const VerticalDivider(width: 1, thickness: 1),
 
-          const VerticalDivider(width: 1, thickness: 1),
-
-          Expanded(child: body),
-        ],
+            Expanded(child: body),
+          ],
+        ),
       ),
     );
   }
