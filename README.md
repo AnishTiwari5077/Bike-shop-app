@@ -1,16 +1,16 @@
-🚴‍♂️ Bike Shop App – 
+# 🚴‍♂️ Bike Shop App
 
-A clean and modern Flutter application for browsing bike products with category filtering, beautiful UI animations, and support for multiple product images.
+A complete, full-stack modern e-commerce solution for browsing and purchasing bikes and accessories. The frontend is built with Flutter and adheres to strict MVVM architecture, while the backend is powered by Node.js/Express.
 
-✨ Features
-🛒 Product Display
-Professional product grid layout
-Each product supports:
-Title, subtitle, description
-Price
-Category (bike, electric, mountain, road, accessories)
-Single or multiple images
-Rating and stock information
+## ✨ Key Features
+
+- **🛍️ Complete E-Commerce Flow:** Browse products, manage cart, and seamlessly checkout.
+- **💳 Real Payments:** Integrated with Stripe for secure, real-time payment processing.
+- **📱 Push Notifications:** Firebase Cloud Messaging (FCM) and local notifications for order status and payment success updates.
+- **🚦 Robust Navigation:** Centralized routing and deep-linking powered by `go_router`.
+- **📂 Dynamic Filtering:** Category filtering, Deals, and New Arrivals all driven by backend data.
+- **🖼️ Rich Media:** Supports single or multiple images with carousel views for detailed product inspection.
+- **🎨 Modern UI:** Glassmorphism cards, custom `AppTheme`, smooth animations (`AnimatedContainer`, `AnimatedScale`), and responsive layout.
 
 ######Screenshot
 <img width="315" height="700" alt="Screenshot_1764859516" src="https://github.com/user-attachments/assets/a2c9768f-d1dc-4154-bea8-c1f64ae13a61" />
@@ -25,74 +25,37 @@ Rating and stock information
 <img width="315" height="700" alt="Screenshot_1764859550" src="https://github.com/user-attachments/assets/27606e60-2afe-450b-b96b-e758b50b4383" />
 <img width="315" height="700" alt="Screenshot_1764859540" src="https://github.com/user-attachments/assets/d58221fd-f8a5-4163-821b-99368dc90967" />
 
+## 🧩 Architecture
 
+This project strictly adheres to the **MVVM (Model-View-ViewModel)** architectural pattern:
+- **`BaseViewModel`**: Standardizes state management (`setLoading`, `setSuccess`, `setError`) for all ViewModels in the app.
+- **Dependency Injection**: Utilizes `ChangeNotifierProvider` and `ChangeNotifierProxyProvider` to safely inject dependencies (e.g., Auth, Payment, and Notification services into the Checkout process) without coupling the Views to business logic.
+- **Service Layer**: Dedicated singleton services for HTTP communication, Stripe operations, and Firebase Notifications to keep ViewModels lean and focused.
 
+## 🛠️ Tech Stack
 
+**Frontend (Flutter):**
+- **Framework:** Flutter (Material 3)
+- **State Management:** Provider
+- **Routing:** go_router
+- **Payments:** flutter_stripe
+- **Notifications:** firebase_messaging, flutter_local_notifications
 
+**Backend (Node.js):**
+- **Server:** Node.js with Express
+- **API:** RESTful endpoints for fetching products, categories, processing orders, and generating Stripe payment intents.
 
-📂 Category Filtering
-Stepped row category selector
-Smooth animations using:
-AnimatedContainer
-AnimatedScale
-AnimatedDefaultTextStyle
+## 🚀 Getting Started
 
+### 1. Backend Setup
+1. Navigate to your Node.js backend directory.
+2. Run `npm install` to install dependencies.
+3. Configure your `.env` variables (e.g., Database URL, Stripe Secret Key, Firebase Admin credentials).
+4. Run `npm start` to start the Node.js server.
 
-
-##Categories include:
-All
-Bikes
-Electric
-Mountain
-Road
-Accessories
-
-🖼️ Multiple Image Support
-Products can contain:
-imageUrl → main image
-images → list of additional images
-UI can be configured to:
-Show only main image
-Show all images (expanded list)
-OR swipe images in carousel (PageView)
-
-🎨 Modern UI
-Custom theme using AppTheme
-Glassmorphism cards
-Smooth shadows & gradients
-Professional spacing and layout
-
-🧩 Clean Architecture
-
-Provider state management
-
-ProductsProvider for:
-
-Category selection
-
-Product filtering
-
-Managing large product data efficiently
-
-
-
-🛠️ Tech Stack
-
-Flutter (Material 3)
-
-Provider for state management
-
-Dart for models & logic
-
-Supports local or API-based product data
-
-🚀 Getting Started
-
-Clone the project
-
-Run flutter pub get
-
-Start the app:
-
-flutter run
-
+### 2. Frontend Setup
+1. Clone the repository and open the `bike_shop` folder.
+2. Update the `baseUrl` in `lib/config/api_config.dart` to match your local IP address where the Node server is running.
+3. Run `flutter pub get` to install dependencies.
+4. Add your `google-services.json` and `GoogleService-Info.plist` for Firebase push notification support.
+5. Run the app: `flutter run`
