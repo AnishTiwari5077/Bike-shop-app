@@ -60,7 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           auth.isSignedIn ? auth.displayName : 'Guest',
                           style: TextStyle(
                             color: colorScheme.onSurface,
-                            fontSize: 22,
+                            fontSize: 22 * Responsive.fontScale(context),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -144,7 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         'Account',
                         style: TextStyle(
                           color: colorScheme.onSurface,
-                          fontSize: 18,
+                          fontSize: 18 * Responsive.fontScale(context),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -184,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         'Settings',
                         style: TextStyle(
                           color: colorScheme.onSurface,
-                          fontSize: 18,
+                          fontSize: 18 * Responsive.fontScale(context),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -525,7 +525,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             value,
             style: TextStyle(
               color: colorScheme.onSurface,
-              fontSize: 20,
+              fontSize: 20 * Responsive.fontScale(context),
               fontWeight: FontWeight.bold,
             ),
           ),

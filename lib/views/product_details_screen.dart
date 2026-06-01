@@ -7,6 +7,7 @@
 //   - image indicator dots: Colors.white → colorScheme.onSurface for light mode
 //   - Product images now use Image.network instead of Image.asset
 
+import 'package:bike_shop/config/responsive.dart';
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
@@ -176,7 +177,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           widget.product.title,
                           style: TextStyle(
                             color: colorScheme.onSurface,
-                            fontSize: 28,
+                            fontSize: 28 * Responsive.fontScale(context),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -223,7 +224,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           'Description',
                           style: TextStyle(
                             color: colorScheme.onSurface,
-                            fontSize: 18,
+                            fontSize: 18 * Responsive.fontScale(context),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -270,7 +271,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           'Features',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 18,
+            fontSize: 18 * Responsive.fontScale(context),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -362,7 +363,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           'Quantity',
           style: TextStyle(
             color: colorScheme.onSurface,
-            fontSize: 18,
+            fontSize: 18 * Responsive.fontScale(context),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -462,7 +463,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 '\$${(widget.product.price * _quantity).toStringAsFixed(2)}',
                 style: TextStyle(
                   color: colorScheme.onSurface,
-                  fontSize: 24,
+                  fontSize: 24 * Responsive.fontScale(context),
                   fontWeight: FontWeight.bold,
                 ),
               ),

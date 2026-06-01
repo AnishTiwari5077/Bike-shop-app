@@ -148,7 +148,7 @@ class PaymentMethodsScreen extends StatelessWidget {
             'No payment methods',
             style: TextStyle(
               color: colorScheme.onSurface,
-              fontSize: 20,
+              fontSize: 20 * Responsive.fontScale(context),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -253,7 +253,7 @@ class _StripeCardTile extends StatelessWidget {
                         card.displayName,
                         style: TextStyle(
                           color: colorScheme.onSurface,
-                          fontSize: 15,
+                          fontSize: 15 * Responsive.fontScale(context),
                           fontWeight: FontWeight.w600,
                         ),
                       ),

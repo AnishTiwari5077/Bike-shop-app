@@ -175,7 +175,7 @@ class _CartScreenState extends State<CartScreen> {
             'Your cart is empty',
             style: TextStyle(
               color: colorScheme.onSurface,
-              fontSize: 24,
+              fontSize: 24 * Responsive.fontScale(context),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -184,7 +184,7 @@ class _CartScreenState extends State<CartScreen> {
             'Add items to get started',
             style: TextStyle(
               color: colorScheme.onSurface.withValues(alpha: 0.54),
-              fontSize: 16,
+              fontSize: 16 * Responsive.fontScale(context),
             ),
           ),
           const SizedBox(height: 32),
@@ -441,7 +441,7 @@ class _CartScreenState extends State<CartScreen> {
             color: isTotal
                 ? colorScheme.onSurface
                 : colorScheme.onSurface.withValues(alpha: 0.7),
-            fontSize: isTotal ? 18 : 16,
+            fontSize: (isTotal ? 18 : 16) * Responsive.fontScale(context),
             fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -453,7 +453,7 @@ class _CartScreenState extends State<CartScreen> {
                 : isTotal
                 ? colorScheme.onSurface
                 : colorScheme.onSurface.withValues(alpha: 0.7),
-            fontSize: isTotal ? 20 : 16,
+            fontSize: (isTotal ? 20 : 16) * Responsive.fontScale(context),
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
           ),
         ),

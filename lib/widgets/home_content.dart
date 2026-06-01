@@ -73,6 +73,7 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildHeader() {
+    final scale = Responsive.fontScale(context);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: Responsive.horizontalPadding(context)),
       child: Column(
@@ -82,15 +83,15 @@ class _HomeContentState extends State<HomeContent> {
             'Welcome Back! 👋',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .6),
-              fontSize: 16,
+              fontSize: 16 * scale,
             ),
           ),
           const SizedBox(height: 4),
-           Text(
+          Text(
             'Find Your Dream Bike',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 28,
+              fontSize: 28 * scale,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -158,6 +159,7 @@ class _HomeContentState extends State<HomeContent> {
     String title, {
     String? subtitle,
   }) {
+    final scale = Responsive.fontScale(context);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: Responsive.horizontalPadding(context)),
       child: Column(
@@ -165,9 +167,9 @@ class _HomeContentState extends State<HomeContent> {
         children: [
           Text(
             title,
-            style:  TextStyle(
+            style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 22,
+              fontSize: 22 * scale,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -177,7 +179,7 @@ class _HomeContentState extends State<HomeContent> {
               subtitle,
               style: TextStyle(
                 color: AppTheme.textTertiary,
-                fontSize: 14,
+                fontSize: 14 * scale,
               ),
             ),
           ],

@@ -30,7 +30,7 @@ class OrderDetailScreen extends StatelessWidget {
                   'Order Items',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 18,
+                    fontSize: 18 * Responsive.fontScale(context),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -67,7 +67,7 @@ class OrderDetailScreen extends StatelessWidget {
             'Order Status',
             style: TextStyle(
               color: colorScheme.onSurface,
-              fontSize: 18,
+              fontSize: 18 * Responsive.fontScale(context),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -216,7 +216,7 @@ class OrderDetailScreen extends StatelessWidget {
             'Order Summary',
             style: TextStyle(
               color: colorScheme.onSurface,
-              fontSize: 18,
+              fontSize: 18 * Responsive.fontScale(context),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -260,7 +260,7 @@ class OrderDetailScreen extends StatelessWidget {
               color: isTotal
                   ? colorScheme.onSurface
                   : colorScheme.onSurface.withValues(alpha: 0.7),
-              fontSize: isTotal ? 16 : 14,
+              fontSize: (isTotal ? 16 : 14) * Responsive.fontScale(context),
               fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
@@ -270,7 +270,7 @@ class OrderDetailScreen extends StatelessWidget {
               color: isTotal
                   ? colorScheme.onSurface
                   : colorScheme.onSurface.withValues(alpha: 0.7),
-              fontSize: isTotal ? 18 : 14,
+              fontSize: (isTotal ? 18 : 14) * Responsive.fontScale(context),
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
             ),
           ),

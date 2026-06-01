@@ -218,7 +218,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                     'Card Number',
                     style: TextStyle(
                       color: colorScheme.onSurface,
-                      fontSize: 16,
+                      fontSize: 16 * Responsive.fontScale(context),
                       fontWeight: FontWeight.w600,
                     ),
                   ),

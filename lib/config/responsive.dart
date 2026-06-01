@@ -99,4 +99,39 @@ class Responsive {
     final pad = horizontalPadding(context);
     return MediaQuery.sizeOf(context).width - pad * 2;
   }
+
+  // ─── LayoutBuilder-compatible helpers ────────────────────────────────────
+  // Use these inside a LayoutBuilder so the widget responds to its own
+  // available width rather than the full screen width.
+  // This is the correct pattern when content lives inside a constrained
+  // parent (e.g. NavigationRail, Dialog, SidePanel).
+
+  /// Resolves the number of grid columns from [BoxConstraints].
+  /// Use inside a [LayoutBuilder] instead of [gridColumns].
+  static int gridColumnsFromConstraints(BoxConstraints constraints) {
+    if (constraints.maxWidth >= tabletBreakpoint) return 4;
+    if (constraints.maxWidth >= mobileBreakpoint) return 3;
+    return 2;
+  }
+
+  /// Resolves a typed value from [BoxConstraints].
+  /// Use inside a [LayoutBuilder] instead of [value].
+  static T valueFromConstraints<T>(
+    BoxConstraints constraints, {
+    required T mobile,
+    T? tablet,
+    T? desktop,
+  }) {
+    if (constraints.maxWidth >= tabletBreakpoint) return desktop ?? tablet ?? mobile;
+    if (constraints.maxWidth >= mobileBreakpoint) return tablet ?? mobile;
+    return mobile;
+  }
+
+  /// Resolves horizontal padding from [BoxConstraints].
+  /// Use inside a [LayoutBuilder] instead of [horizontalPadding].
+  static double horizontalPaddingFromConstraints(BoxConstraints constraints) {
+    if (constraints.maxWidth >= tabletBreakpoint) return 64.0;
+    if (constraints.maxWidth >= mobileBreakpoint) return 32.0;
+    return 16.0;
+  }
 }
