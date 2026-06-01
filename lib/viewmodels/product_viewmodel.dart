@@ -26,6 +26,12 @@ class ProductViewModel extends BaseViewModel {
   String get selectedCategory => _selectedCategory;
   List<String> get recentSearches => [..._recentSearches];
 
+  List<Product> get dealsProducts =>
+      _products.where((p) => p.isDeal == true).toList();
+
+  List<Product> get newArrivalsProducts =>
+      _products.where((p) => p.isNewArrival == true).toList();
+
   ProductViewModel() {
     _loadRecentSearches();
   }

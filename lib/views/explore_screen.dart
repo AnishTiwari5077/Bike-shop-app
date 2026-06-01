@@ -297,9 +297,7 @@ class DealsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final productsProvider = context.watch<ProductsProvider>();
-    final deals = productsProvider.products
-        .where((p) => p.isDeal == true)
-        .toList();
+    final deals = productsProvider.dealsProducts;
 
     if (deals.isEmpty) {
       return Center(
@@ -540,9 +538,7 @@ class NewArrivalsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final productsProvider = context.watch<ProductsProvider>();
-    final newProducts = productsProvider.products
-        .where((p) => p.isNewArrival == true)
-        .toList();
+    final newProducts = productsProvider.newArrivalsProducts;
 
     if (newProducts.isEmpty) {
       return Center(

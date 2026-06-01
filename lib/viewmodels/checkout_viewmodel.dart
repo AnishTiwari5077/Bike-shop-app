@@ -19,9 +19,26 @@ import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 ///
 /// Consumed by CheckoutScreen. Removes business logic from the View.
 class CheckoutViewModel extends BaseViewModel {
+  AuthViewModel? _authVM;
+  PaymentViewModel? _paymentVM;
+  OrderViewModel? _orderVM;
+  NotificationViewModel? _notificationVM;
+
+  void update(
+    AuthViewModel auth,
+    PaymentViewModel payment,
+    OrderViewModel order,
+    NotificationViewModel notif,
+  ) {
+    _authVM = auth;
+    _paymentVM = payment;
+    _orderVM = order;
+    _notificationVM = notif;
+  }
+
   /// Orchestrates order creation and cart clearing.
   /// Spawns the domain [Order] object and persists it using [orderVM].
-  Future<Order> createOrder(CartViewModel cart, OrderViewModel orderVM) async {
+  Future<Order> createOrder(CartViewModel cart) async {
     setLoading();
     final order = Order(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -30,7 +47,7 @@ class CheckoutViewModel extends BaseViewModel {
       orderDate: DateTime.now(),
       status: OrderStatus.pending,
     );
-    orderVM.addOrder(order);
+    _orderVM!.addOrder(order);
     cart.clearCart();
     setSuccess();
     return order;
@@ -46,10 +63,6 @@ class CheckoutViewModel extends BaseViewModel {
   Future<bool> processPayment({
     required Order order,
     required String paymentMethodId,
-    required PaymentViewModel paymentVM,
-    required OrderViewModel orderVM,
-    required NotificationViewModel notificationVM,
-    required AuthViewModel authVM,
   }) async {
     setLoading();
 
@@ -58,14 +71,14 @@ class CheckoutViewModel extends BaseViewModel {
     // disappears from the Orders screen. If the payment fails we revert.
     // This prevents double-pay when the user navigates back during a
     // long-running network call.
-    orderVM.updateOrderStatus(order.id, OrderStatus.delivered);
+    _orderVM!.updateOrderStatus(order.id, OrderStatus.delivered);
 
-    final result = await paymentVM.payForOrder(
+    final result = await _paymentVM!.payForOrder(
       amount: order.totalAmount,
       orderId: order.id,
       paymentMethodId: paymentMethodId,
-      customerName: authVM.displayName,
-      customerEmail: authVM.email,
+      customerName: _authVM!.displayName,
+      customerEmail: _authVM!.email,
       items: order.items
           .map(
             (i) => {
@@ -84,7 +97,7 @@ class CheckoutViewModel extends BaseViewModel {
       // Order is already marked delivered (optimistic update above).
 
       // ── Add to in-app notification list ─────────────────────────────────
-      notificationVM.addNotification(
+      _notificationVM!.addNotification(
         'Payment Successful',
         'Order #${order.id.substring(0, 8)} — \$${order.totalAmount.toStringAsFixed(2)} charged.',
       );
@@ -96,10 +109,10 @@ class CheckoutViewModel extends BaseViewModel {
       );
 
       // ── Email confirmation ───────────────────────────────────────────────
-      if (authVM.isSignedIn) {
+      if (_authVM!.isSignedIn) {
         await NotificationService.instance.sendPaymentConfirmationEmail(
-          email: authVM.email,
-          name: authVM.displayName,
+          email: _authVM!.email,
+          name: _authVM!.displayName,
           orderId: order.id,
           amount: order.totalAmount,
           items: order.items
@@ -119,7 +132,7 @@ class CheckoutViewModel extends BaseViewModel {
     } else {
       // ── REVERT OPTIMISTIC UPDATE ─────────────────────────────────────────
       // Payment failed — put the order back to pending so the user can retry.
-      orderVM.updateOrderStatus(order.id, OrderStatus.pending);
+      _orderVM!.updateOrderStatus(order.id, OrderStatus.pending);
       setError(result.errorMessage ?? 'Payment failed. Please try again.');
       return false;
     }

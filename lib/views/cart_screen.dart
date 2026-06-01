@@ -11,7 +11,7 @@ import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/cart_items.dart';
 import 'package:bike_shop/viewmodels/cart_viewmodel.dart';
 import 'package:bike_shop/viewmodels/checkout_viewmodel.dart';
-import 'package:bike_shop/viewmodels/order_viewmodel.dart';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +33,6 @@ class _CartScreenState extends State<CartScreen> {
   // guards every context access — the linter warning is resolved.
   Future<void> _processCheckout() async {
     final cart = context.read<CartProvider>();
-    final ordersProvider = context.read<OrdersProvider>();
     final checkoutVM = context.read<CheckoutViewModel>();
 
     if (cart.isEmpty) return;
@@ -42,7 +41,7 @@ class _CartScreenState extends State<CartScreen> {
     // across async gaps even with a mounted guard.
     final colorScheme = Theme.of(context).colorScheme;
 
-    await checkoutVM.createOrder(cart, ordersProvider);
+    await checkoutVM.createOrder(cart);
 
     if (!mounted) return;
     showDialog(

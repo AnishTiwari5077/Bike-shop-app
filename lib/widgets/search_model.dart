@@ -7,8 +7,9 @@
 import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/product_model.dart';
 import 'package:bike_shop/viewmodels/product_viewmodel.dart';
-import 'package:bike_shop/views/product_details_screen.dart';
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class SearchModal extends StatefulWidget {
@@ -287,12 +288,7 @@ class _SearchModalState extends State<SearchModal> {
       onTap: () {
         provider.addRecentSearch(product.title);
         Navigator.pop(context);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(product: product),
-          ),
-        );
+        context.push('/product', extra: product);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

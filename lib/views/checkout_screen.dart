@@ -13,8 +13,7 @@ import 'package:bike_shop/config/theme.dart';
 import 'package:bike_shop/models/order_model.dart';
 import 'package:bike_shop/viewmodels/auth_viewmodel.dart';
 import 'package:bike_shop/viewmodels/checkout_viewmodel.dart';
-import 'package:bike_shop/viewmodels/notification_viewmodel.dart';
-import 'package:bike_shop/viewmodels/order_viewmodel.dart';
+
 import 'package:bike_shop/viewmodels/payment_viewmodel.dart';
 import 'package:bike_shop/views/add_card_screen.dart';
 import 'package:bike_shop/services/stripe_service.dart';
@@ -58,10 +57,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final ok = await context.read<CheckoutViewModel>().processPayment(
       order: widget.order,
       paymentMethodId: _selectedCardId!,
-      paymentVM: context.read<PaymentProvider>(),
-      orderVM: context.read<OrdersProvider>(),
-      notificationVM: context.read<NotificationProvider>(),
-      authVM: context.read<AuthProvider>(),
     );
 
     if (!mounted) return;
