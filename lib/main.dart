@@ -150,7 +150,12 @@ class BikeShopApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => NotificationViewModel()),
-        ChangeNotifierProvider(create: (_) => CheckoutViewModel()),
+        ChangeNotifierProxyProvider4<AuthViewModel, PaymentViewModel,
+            OrderViewModel, NotificationViewModel, CheckoutViewModel>(
+          create: (_) => CheckoutViewModel(),
+          update: (_, auth, payment, order, notif, checkout) =>
+              checkout!..update(auth, payment, order, notif),
+        ),
         ChangeNotifierProvider(
           create: (_) => CategoryViewModel()..loadCategories(),
         ),
