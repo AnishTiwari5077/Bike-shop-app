@@ -1,6 +1,6 @@
-class ApiConfig {
-  // static const String baseUrl =
-  //    'http://192.168.1.6:3000'; // same as your other providers
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-  static const String baseUrl = 'http://192.168.1.21:3000';
+class ApiConfig {
+  static String get baseUrl =>
+      dotenv.env['API_BASE_URL'] ?? 'http://localhost:3000';
 }

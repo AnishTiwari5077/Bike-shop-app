@@ -11,7 +11,7 @@ class StripeService {
   StripeService._();
   static final StripeService instance = StripeService._();
 
-  static const String _baseUrl = ApiConfig.baseUrl;
+  static String get _baseUrl => ApiConfig.baseUrl;
 
   final Map<String, String> _headers = {'Content-Type': 'application/json'};
 
