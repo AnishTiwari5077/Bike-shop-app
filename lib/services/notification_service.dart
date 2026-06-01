@@ -14,10 +14,7 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
-  // ⚠️ IMPORTANT: Change this to your computer's actual local IP address
-  // (run `ipconfig` on Windows or `ifconfig` on Mac/Linux)
-  // static const String _baseUrl = ApiConfig.baseUrl; static const String _baseUrl = 'http://192.168.1.6:3000';
-  static const String _baseUrl = ApiConfig.baseUrl;
+  static String get _baseUrl => ApiConfig.baseUrl;
   Future<void> initialize() async {
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
 
@@ -116,7 +113,9 @@ class NotificationService {
     required double amount,
     required List<Map<String, dynamic>> items,
   }) async {
-    debugPrint('📧 Sending payment confirmation email to: $email for order: $orderId, amount: \$${amount.toStringAsFixed(2)}');
+    debugPrint(
+      '📧 Sending payment confirmation email to: $email for order: $orderId, amount: \$${amount.toStringAsFixed(2)}',
+    );
 
     try {
       final response = await http.post(
@@ -133,10 +132,14 @@ class NotificationService {
       if (response.statusCode == 200) {
         debugPrint('✅ Email sent successfully to $email.');
       } else {
-        debugPrint('❌ Email send failed. Status: ${response.statusCode}, Body: ${response.body}');
+        debugPrint(
+          '❌ Email send failed. Status: ${response.statusCode}, Body: ${response.body}',
+        );
       }
     } catch (e) {
-      debugPrint('❌ Email send error: $e. Ensure backend is running on $_baseUrl');
+      debugPrint(
+        '❌ Email send error: $e. Ensure backend is running on $_baseUrl',
+      );
     }
   }
 }
