@@ -26,15 +26,18 @@ class PaymentMethodsScreen extends StatelessWidget {
           ? _buildError(provider.error!, colorScheme)
           : !provider.hasCards
           ? _buildEmptyState(context, provider)
-          : ListView(
-              padding: EdgeInsets.fromLTRB(
-                Responsive.horizontalPadding(context),
-                16,
-                Responsive.horizontalPadding(context),
-                100,
-              ),
-              children: [
-                _SectionLabel(text: 'SAVED CARDS', colorScheme: colorScheme),
+          : Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    Responsive.horizontalPadding(context),
+                    16,
+                    Responsive.horizontalPadding(context),
+                    100,
+                  ),
+                  children: [
+                    _SectionLabel(text: 'SAVED CARDS', colorScheme: colorScheme),
                 const SizedBox(height: 12),
                 ...provider.cards.map(
                   (card) => _StripeCardTile(
@@ -68,6 +71,8 @@ class PaymentMethodsScreen extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
     );
   }
 

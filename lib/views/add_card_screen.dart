@@ -168,14 +168,14 @@ class _AddCardScreenState extends State<AddCardScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add New Card'), elevation: 0),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: Responsive.horizontalPadding(context),
-              vertical: 20,
-            ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+          horizontal: Responsive.horizontalPadding(context),
+          vertical: 20,
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
             child: Form(
               key: _formKey,
               child: Column(

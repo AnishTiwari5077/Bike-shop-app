@@ -154,47 +154,49 @@ class _CartScreenState extends State<CartScreen> {
   Widget _buildEmptyState() {
     final colorScheme = Theme.of(context).colorScheme;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: colorScheme.onSurface.withValues(alpha: 0.05),
-              shape: BoxShape.circle,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: colorScheme.onSurface.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.shopping_cart_outlined,
+                size: 60,
+                color: colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
             ),
-            child: Icon(
-              Icons.shopping_cart_outlined,
-              size: 60,
-              color: colorScheme.onSurface.withValues(alpha: 0.3),
+            const SizedBox(height: 24),
+            Text(
+              'Your cart is empty',
+              style: TextStyle(
+                color: colorScheme.onSurface,
+                fontSize: 24 * Responsive.fontScale(context),
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Your cart is empty',
-            style: TextStyle(
-              color: colorScheme.onSurface,
-              fontSize: 24 * Responsive.fontScale(context),
-              fontWeight: FontWeight.w600,
+            const SizedBox(height: 8),
+            Text(
+              'Add items to get started',
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.54),
+                fontSize: 16 * Responsive.fontScale(context),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add items to get started',
-            style: TextStyle(
-              color: colorScheme.onSurface.withValues(alpha: 0.54),
-              fontSize: 16 * Responsive.fontScale(context),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              // FIX: use callback from MainScreen, not push(HomeScreen)
+              onPressed: widget.onGoHome ?? () => Navigator.pop(context),
+              icon: const Icon(Icons.shopping_bag_outlined),
+              label: const Text('Start Shopping'),
             ),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            // FIX: use callback from MainScreen, not push(HomeScreen)
-            onPressed: widget.onGoHome ?? () => Navigator.pop(context),
-            icon: const Icon(Icons.shopping_bag_outlined),
-            label: const Text('Start Shopping'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

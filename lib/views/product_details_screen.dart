@@ -37,6 +37,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final images = widget.product.images ?? [widget.product.imageUrl];
     final colorScheme = Theme.of(context).colorScheme;
 
+    // Calculate height based on screen width to maintain a good aspect ratio,
+    // but clamp it so it doesn't get ridiculously tall on tablets.
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final appBarHeight = (screenWidth * 0.8).clamp(300.0, 450.0);
+
     return Scaffold(
       body: Center(
         child: ConstrainedBox(
@@ -44,7 +49,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           child: CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 300,
+                expandedHeight: appBarHeight,
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
