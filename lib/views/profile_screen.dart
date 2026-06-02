@@ -393,71 +393,111 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Google Sign-In Button ─────────────────────────────────────────────────
-  // FIXED: Removed manual PaymentViewModel.initialize() call here.
-  // PaymentViewModel now auto-initializes via ChangeNotifierProxyProvider in main.dart.
   Widget _buildGoogleSignInButton(AuthProvider auth) {
-    return GestureDetector(
-      onTap: () async {
-        // FIX Issue 5: capture messenger before async gap so BuildContext
-        // is not used across an async boundary.
-        final messenger = ScaffoldMessenger.of(context);
-        final success = await auth.signInWithGoogle();
-        if (!mounted) return;
-        if (success) {
-          // PaymentViewModel initializes automatically via ProxyProvider in main.dart
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text('Welcome, ${auth.displayName}!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          messenger.showSnackBar(
-            const SnackBar(
-              content: Text('Sign-in cancelled or failed.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: Ink(
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF4285F4), // Google Blue
+              Color(0xFF34A853), // Green
+              Color(0xFFFBBC05), // Yellow
+              Color(0xFFEA4335), // Red
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: auth.isLoading
-            ? const Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const _GoogleLogo(),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Continue with Google',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: auth.isLoading
+              ? null
+              : () async {
+                  final messenger = ScaffoldMessenger.of(context);
+
+                  final success = await auth.signInWithGoogle();
+
+                  if (!mounted) return;
+
+                  if (success) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Welcome, ${auth.displayName}!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Sign-in cancelled or failed'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            alignment: Alignment.center,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: auth.isLoading
+                  ? const SizedBox(
+                      key: ValueKey('loading'),
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Row(
+                      key: const ValueKey('content'),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 26,
+                          height: 26,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                          child: const Center(
+                            child: Text(
+                              "G",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          "Continue with Google",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
+            ),
+          ),
+        ),
       ),
     );
   }
