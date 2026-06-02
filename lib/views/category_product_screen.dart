@@ -38,36 +38,52 @@ class CategoryProductsScreen extends StatelessWidget {
       ),
       body: categoryProducts.isEmpty
           ? _buildEmpty(context, categoryName)
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final pad = Responsive.horizontalPaddingFromConstraints(constraints);
-                return GridView.builder(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: pad,
-                    vertical: 16,
-                  ),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: Responsive.gridColumnsFromConstraints(constraints),
-                    childAspectRatio: Responsive.valueFromConstraints(
+          : OrientationBuilder(
+              builder: (context, orientation) {
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final pad = Responsive.horizontalPaddingFromConstraints(
                       constraints,
-                      mobile: 0.75,
-                      tablet: 0.78,
-                      desktop: 0.80,
-                    ),
-                    crossAxisSpacing: Responsive.valueFromConstraints(
-                      constraints,
-                      mobile: 12.0,
-                      tablet: 16.0,
-                    ),
-                    mainAxisSpacing: Responsive.valueFromConstraints(
-                      constraints,
-                      mobile: 12.0,
-                      tablet: 16.0,
-                    ),
-                  ),
-                  itemCount: categoryProducts.length,
-                  itemBuilder: (context, index) =>
-                      _CategoryProductCard(product: categoryProducts[index]),
+                    );
+
+                    return GridView.builder(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: pad,
+                        vertical: 16,
+                      ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: Responsive.gridColumnsFromConstraints(
+                          constraints,
+                          orientation,
+                        ),
+                        childAspectRatio: Responsive.valueFromConstraints(
+                          constraints,
+                          mobile: 0.75,
+                          tablet: 0.78,
+                          desktop: 0.80,
+                          orientation: orientation,
+                        ),
+                        crossAxisSpacing: Responsive.valueFromConstraints(
+                          constraints,
+                          mobile: 12.0,
+                          tablet: 16.0,
+                          orientation: orientation,
+                        ),
+                        mainAxisSpacing: Responsive.valueFromConstraints(
+                          constraints,
+                          mobile: 12.0,
+                          tablet: 16.0,
+                          orientation: orientation,
+                        ),
+                      ),
+                      itemCount: categoryProducts.length,
+                      itemBuilder: (context, index) {
+                        return _CategoryProductCard(
+                          product: categoryProducts[index],
+                        );
+                      },
+                    );
+                  },
                 );
               },
             ),
@@ -76,6 +92,7 @@ class CategoryProductsScreen extends StatelessWidget {
 
   Widget _buildEmpty(BuildContext context, String name) {
     final cs = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -101,11 +118,13 @@ class CategoryProductsScreen extends StatelessWidget {
 
 class _CategoryProductCard extends StatelessWidget {
   final Product product;
+
   const _CategoryProductCard({required this.product});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () => context.push('/product', extra: product),
       child: Container(
@@ -128,6 +147,7 @@ class _CategoryProductCard extends StatelessWidget {
                   width: double.infinity,
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) return child;
+
                     return Container(
                       color: cs.onSurface.withValues(alpha: 0.1),
                       child: const Center(
@@ -135,19 +155,26 @@ class _CategoryProductCard extends StatelessWidget {
                       ),
                     );
                   },
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: cs.onSurface.withValues(alpha: 0.1),
-                    child: Icon(
-                      Icons.image_not_supported,
-                      color: cs.onSurface.withValues(alpha: 0.54),
-                    ),
-                  ),
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: cs.onSurface.withValues(alpha: 0.1),
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: cs.onSurface.withValues(alpha: 0.54),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
             Padding(
               padding: EdgeInsets.all(
-                Responsive.value(context, mobile: 10.0, tablet: 12.0, desktop: 14.0),
+                Responsive.value(
+                  context,
+                  mobile: 10.0,
+                  tablet: 12.0,
+                  desktop: 14.0,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

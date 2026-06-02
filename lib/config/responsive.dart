@@ -106,21 +106,22 @@ class Responsive {
   // This is the correct pattern when content lives inside a constrained
   // parent (e.g. NavigationRail, Dialog, SidePanel).
 
-  /// Resolves the number of grid columns from [BoxConstraints].
+  /// Resolves the number of grid columns from [BoxConstraints] and [Orientation].
   /// Use inside a [LayoutBuilder] instead of [gridColumns].
-  static int gridColumnsFromConstraints(BoxConstraints constraints) {
+  static int gridColumnsFromConstraints(BoxConstraints constraints, [Orientation? orientation]) {
     if (constraints.maxWidth >= tabletBreakpoint) return 4;
     if (constraints.maxWidth >= mobileBreakpoint) return 3;
     return 2;
   }
 
-  /// Resolves a typed value from [BoxConstraints].
+  /// Resolves a typed value from [BoxConstraints] and [Orientation].
   /// Use inside a [LayoutBuilder] instead of [value].
   static T valueFromConstraints<T>(
     BoxConstraints constraints, {
     required T mobile,
     T? tablet,
     T? desktop,
+    Orientation? orientation,
   }) {
     if (constraints.maxWidth >= tabletBreakpoint) return desktop ?? tablet ?? mobile;
     if (constraints.maxWidth >= mobileBreakpoint) return tablet ?? mobile;

@@ -63,13 +63,8 @@ class _GridViewWidgetState extends State<GridViewWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ---------------- IMAGE (Responsive Height) ----------------
-              SizedBox(
-                height: Responsive.value(
-                  context,
-                  mobile: 130.0,
-                  tablet: 155.0,
-                  desktop: 180.0,
-                ),
+              Expanded(
+                child: SizedBox(
                 width: double.infinity,
                 child: Stack(
                   children: [
@@ -127,10 +122,10 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                   ],
                 ),
               ),
+            ),
 
               // ---------------- CONTENT ----------------
-              Expanded(
-                child: Padding(
+              Padding(
                   padding: EdgeInsets.all(Responsive.value(context, mobile: 10.0, tablet: 12.0, desktop: 14.0)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +178,7 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                         ),
                       ],
 
-                      const Spacer(),
+                      const SizedBox(height: 8),
 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -221,7 +216,6 @@ class _GridViewWidgetState extends State<GridViewWidget> {
                     ],
                   ),
                 ),
-              ),
             ],
           ),
         ),
