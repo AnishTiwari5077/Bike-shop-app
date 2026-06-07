@@ -676,6 +676,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 // ── Google Logo Widget ────────────────────────────────────────────────────────
+// ignore: unused_element
 class _GoogleLogo extends StatelessWidget {
   const _GoogleLogo();
   @override
